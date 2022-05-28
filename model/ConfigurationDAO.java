@@ -1,5 +1,6 @@
 package gov.nih.nci.bento.model;
 
+import gov.nih.nci.cds.model.CdsEsFilter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,8 @@ public class ConfigurationDAO {
 	public DataFetcher dataFetcher() {
 	    String project = env.getProperty("project", "bento").toLowerCase();
 	    switch (project) {
+			case "cds":
+				return new CdsEsFilter();
 			case "icdc":
 				return new IcdcEsFilter();
 			case "bento":
