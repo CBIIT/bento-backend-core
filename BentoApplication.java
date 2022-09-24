@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"gov.nih.nci"})
 public class BentoApplication extends SpringBootServletInitializer {
 	private static final Logger logger = LogManager.getLogger(BentoApplication.class);
 
