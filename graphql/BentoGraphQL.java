@@ -3,7 +3,7 @@ package gov.nih.nci.bento.graphql;
 import gov.nih.nci.bento.model.AbstractESDataFetcher;
 import gov.nih.nci.bento.model.AbstractNeo4jDataFetcher;
 import gov.nih.nci.bento.model.ConfigurationDAO;
-import gov.nih.nci.bento.model.IcdcEsFilter;
+import gov.nih.nci.icdc.model.IcdcEsFilter;
 import gov.nih.nci.bento.model.PrivateESDataFetcher;
 import gov.nih.nci.bento.model.PrivateNeo4jDataFetcher;
 import gov.nih.nci.bento.model.PublicESDataFetcher;
