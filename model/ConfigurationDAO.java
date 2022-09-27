@@ -21,6 +21,9 @@ public class ConfigurationDAO {
 	//Bento API Version
 	@Value("${bento.api.version}")
 	private String bentoApiVersion;
+	//Project
+	@Value("${project:bento}")
+	private String project;
 
 	//Enable authentication check
 	@Value("${auth.enabled}")
@@ -77,4 +80,11 @@ public class ConfigurationDAO {
 	private boolean esFilterEnabled;
 	@Value("${es.sign.requests:true}")
 	private boolean esSignRequests;
+	@Value("${es.service_name}")
+	private String serviceName;
+	@Value("${es.region}")
+	private String region;
+	//Testing
+	@Value("${test.queries_file}")
+	private String testQueriesFile;
 }

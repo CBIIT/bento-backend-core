@@ -7,7 +7,6 @@ import com.google.gson.JsonObject;
 import gov.nih.nci.bento.service.ESService;
 import graphql.schema.idl.RuntimeWiring;
 import org.opensearch.client.Request;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,6 +32,8 @@ public abstract class AbstractESDataFetcher {
     protected final String SAMPLES_COUNT_END_POINT = "/samples/_count";
     protected final String FILES_END_POINT = "/files/_search";
     protected final String FILES_COUNT_END_POINT = "/files/_count";
+    protected final String LAB_PROCEDURE_END_POINT = "/lab_procedures/_search";
+    protected final String LAB_PROCEDURE_COUNT_END_POINT = "/lab_procedures/_count";
     protected final String NODES_END_POINT = "/model_nodes/_search";
     protected final String NODES_COUNT_END_POINT = "/model_nodes/_count";
     protected final String PROPERTIES_END_POINT = "/model_properties/_search";
@@ -55,15 +56,15 @@ public abstract class AbstractESDataFetcher {
     protected final String GS_HIGHLIGHT_DELIMITER = "$";
     protected final Set<String> RANGE_PARAMS = Set.of("age_at_index");
     protected final Gson gson;
-    @Autowired
-    protected ESService esService;
+    protected final ESService esService;
 
-    public AbstractESDataFetcher(){
+    public AbstractESDataFetcher(ESService esService){
+        this.esService = esService;
         this.gson = new GsonBuilder().serializeNulls().create();
     }
 
     // abstract methods
-    public abstract RuntimeWiring buildRuntimeWiring();
+    public abstract RuntimeWiring buildRuntimeWiring() throws IOException;
 
     protected Map<String, Object> globalSearch(Map<String, Object> params) throws IOException {
         return getSearchCategoriesResult(params, initSearchCategories());

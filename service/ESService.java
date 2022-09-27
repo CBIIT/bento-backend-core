@@ -1,32 +1,24 @@
 package gov.nih.nci.bento.service;
 
-import com.amazonaws.auth.AWS4Signer;
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.http.AWSRequestSigningApacheInterceptor;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
+import com.google.gson.*;
 import gov.nih.nci.bento.model.ConfigurationDAO;
-import org.apache.http.HttpHost;
-import org.apache.http.HttpRequestInterceptor;
+import gov.nih.nci.bento.model.search.MultipleRequests;
+import gov.nih.nci.bento.service.connector.AWSClient;
+import gov.nih.nci.bento.service.connector.AbstractClient;
+import gov.nih.nci.bento.service.connector.DefaultClient;
 import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.opensearch.client.Request;
-import org.opensearch.client.Response;
-import org.opensearch.client.RestClient;
+import org.jetbrains.annotations.NotNull;
+import org.opensearch.OpenSearchException;
+import org.opensearch.action.search.MultiSearchRequest;
+import org.opensearch.action.search.MultiSearchResponse;
+import org.opensearch.client.*;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PreDestroy;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @Service("ESService")
 public class ESService {
@@ -35,37 +27,18 @@ public class ESService {
     public static final String AGGS = "aggs";
     public static final int MAX_ES_SIZE = 10000;
 
-    static final AWSCredentialsProvider credentialsProvider = new DefaultAWSCredentialsProviderChain();
-
     private static final Logger logger = LogManager.getLogger(RedisService.class);
-
-
-    private final ConfigurationDAO config;
     private RestClient client;
+    private final RestHighLevelClient restHighLevelClient;
     private final Gson gson;
 
     public ESService(ConfigurationDAO config){
-        this.config = config;
         this.gson = new GsonBuilder().serializeNulls().create();
         logger.info("Initializing Elasticsearch client");
-        client = searchClient("es", "us-east-1");
-    }
-
-    // Base on host name to use signed request (AWS) or not (local)
-    public RestClient searchClient(String serviceName, String region) {
-        String host = config.getEsHost().trim();
-        String scheme = config.getEsScheme();
-        int port = config.getEsPort();
-        if (config.isEsSignRequests()) {
-            AWS4Signer signer = new AWS4Signer();
-            signer.setServiceName(serviceName);
-            signer.setRegionName(region);
-            HttpRequestInterceptor interceptor = new AWSRequestSigningApacheInterceptor(serviceName, signer, credentialsProvider);
-            return RestClient.builder(new HttpHost(host, port, scheme)).setHttpClientConfigCallback(hacb -> hacb.addInterceptorLast(interceptor)).build();
-        } else {
-            var lowLevelBuilder = RestClient.builder(new HttpHost(host, port, scheme));
-            return lowLevelBuilder.build();
-        }
+        // Base on host name to use signed request (AWS) or not (local)
+        AbstractClient abstractClient = config.isEsSignRequests() ? new AWSClient(config) : new DefaultClient(config);
+        restHighLevelClient = abstractClient.getElasticClient();
+        client = abstractClient.getLowLevelElasticClient();
     }
 
     @PreDestroy
@@ -84,6 +57,31 @@ public class ESService {
         return getJSonFromResponse(response);
     }
 
+    public <T> Map<String, T> elasticMultiSend(@NotNull List<MultipleRequests> requests) throws IOException {
+        try {
+            MultiSearchRequest multiRequests = new MultiSearchRequest();
+            requests.forEach(r->multiRequests.add(r.getRequest()));
+
+            MultiSearchResponse response = restHighLevelClient.msearch(multiRequests, RequestOptions.DEFAULT);
+            return getMultiResponse(response.getResponses(), requests);
+        }
+        catch (IOException | OpenSearchException e) {
+            logger.error(e.toString());
+            throw new IOException(e.toString());
+        }
+    }
+
+    private <T> Map<String, T> getMultiResponse(MultiSearchResponse.Item[] response, List<MultipleRequests> requests) {
+        Map<String, T> result = new HashMap<>();
+        final int[] index = {0};
+        List.of(response).forEach(item->{
+            MultipleRequests req = requests.get(index[0]);
+            result.put(req.getName(), (T) req.getTypeMapper().get(item.getResponse()));
+            index[0] += 1;
+        });
+        return result;
+    }
+
     public JsonObject getJSonFromResponse(Response response) throws IOException {
         String responseBody = EntityUtils.toString(response.getEntity());
         JsonObject jsonObject = gson.fromJson(responseBody, JsonObject.class);
@@ -98,6 +96,10 @@ public class ESService {
         return buildListQuery(params, excludedParams, false);
     }
 
+    public Map<String, Object> buildListQuery() {
+        return buildListQuery(Map.of(), Set.of(), true);
+    }
+
     public Map<String, Object> buildListQuery(Map<String, Object> params, Set<String> excludedParams, boolean ignoreCase) {
         Map<String, Object> result = new HashMap<>();
 
@@ -106,16 +108,7 @@ public class ESService {
             if (excludedParams.contains(key)) {
                 continue;
             }
-            Object obj = params.get(key);
-
-            List<String> valueSet;
-            if (obj instanceof List) {
-                valueSet = (List<String>) obj;
-            } else {
-                String value = (String)obj;
-                valueSet = List.of(value);
-            }
-
+            List<String> valueSet = formatParameter(params.get(key));
             if (ignoreCase) {
                 List<String> lowerCaseValueSet = new ArrayList<>();
                 for (String value: valueSet) {
@@ -178,7 +171,7 @@ public class ESService {
                 }
             } else {
                 // Term parameters (default)
-                List<String> valueSet = (List<String>) params.get(key);
+                List<String> valueSet = formatParameter(params.get(key));
                 if (valueSet.size() > 0) {
                     filter.add(Map.of(
                             "terms", Map.of( key, valueSet)
@@ -315,6 +308,16 @@ public class ESService {
         return jsonObject.get("hits").getAsJsonObject().get("total").getAsJsonObject().get("value").getAsInt();
     }
 
+    public List<Map<String, Object>> collectPage(Map<String, Object> params, String endpoint, String[][] properties) throws IOException {
+        Map<String, Object> query = buildListQuery(params, Set.of(),false);
+        Request request = new Request("GET", endpoint);
+        return collectPage(request, query, properties);
+    }
+
+    public List<Map<String, Object>> collectPage(Request request, Map<String, Object> query, String[][] properties) throws IOException {
+        return collectPage(request, query, properties, ESService.MAX_ES_SIZE, 0);
+    }
+
     public List<Map<String, Object>> collectPage(Request request, Map<String, Object> query, String[][] properties, int pageSize, int offset) throws IOException {
         // data over limit of Elasticsearch, have to use roll API
         if (pageSize > MAX_ES_SIZE) {
@@ -420,6 +423,34 @@ public class ESService {
         return data;
     }
 
+    public List<Map<String, Object>> getFilteredGroupCount(Map<String, Object> params, String endpoint, String aggregationField) throws IOException {
+        return getFilteredGroupCount(params, endpoint, new String[]{aggregationField});
+    }
+
+    public List<Map<String, Object>> getFilteredGroupCount(Map<String, Object> params, String endpoint, String[] aggregationFields) throws IOException {
+        Map<String, Object> query = buildFacetFilterQuery(params);
+        query = addAggregations(query, aggregationFields);
+        Request request = new Request("GET", endpoint);
+        request.setJsonEntity(gson.toJson(query));
+        JsonObject result = send(request);
+        List<Map<String, Object>> groupCounts = new ArrayList<>();
+        JsonArray buckets = result
+                .getAsJsonObject("aggregations")
+                .getAsJsonObject("diagnoses")
+                .getAsJsonArray("buckets");
+        for (JsonElement element: buckets){
+            JsonObject groupCount = element.getAsJsonObject();
+            String group = groupCount.get("key").getAsString();
+            groupCounts.add(
+                    Map.of(
+                            "group", group,
+                            "subjects", groupCount.get("doc_count").getAsInt()
+                    )
+            );
+        }
+        return groupCounts;
+    }
+
     // Convert JsonElement into Java collections and primitives
     private Object getValue(JsonElement element) {
         Object value = null;
@@ -440,5 +471,14 @@ public class ESService {
             value = element.getAsString();
         }
         return value;
+    }
+
+    private List<String> formatParameter(Object param){
+        if (param instanceof List) {
+            return (List<String>) param;
+        } else {
+            String value = (String)param;
+            return List.of(value);
+        }
     }
 }
