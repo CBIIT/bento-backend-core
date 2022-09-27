@@ -2,11 +2,11 @@ package gov.nih.nci.bento.graphql;
 
 import gov.nih.nci.bento.model.AbstractESDataFetcher;
 import gov.nih.nci.bento.model.AbstractNeo4jDataFetcher;
+import gov.nih.nci.bento.model.AbstractPrivateESDataFetcher;
+import gov.nih.nci.bento.model.AbstractPublicESDataFetcher;
 import gov.nih.nci.bento.model.ConfigurationDAO;
-import gov.nih.nci.bento.model.IcdcEsFilter;
 import gov.nih.nci.bento.model.PrivateNeo4jDataFetcher;
 import gov.nih.nci.bento.model.PublicNeo4jDataFetcher;
-import gov.nih.nci.bento.service.ESService;
 import gov.nih.nci.bento.service.RedisService;
 import graphql.GraphQL;
 import graphql.schema.GraphQLNamedType;
@@ -39,10 +39,9 @@ public class BentoGraphQL {
 
     public BentoGraphQL(
             ConfigurationDAO config,
-            ESService esService,
             RedisService redisService,
-            AbstractESDataFetcher privateESDataFetcher,
-            AbstractESDataFetcher publicESDataFetcher
+            AbstractPrivateESDataFetcher privateESDataFetcher,
+            AbstractPublicESDataFetcher publicESDataFetcher
     ) throws IOException {
         PublicNeo4jDataFetcher publicNeo4JDataFetcher = new PublicNeo4jDataFetcher(config, redisService);
         PrivateNeo4jDataFetcher privateNeo4jDataFetcher = new PrivateNeo4jDataFetcher(config, redisService);
