@@ -10,4 +10,5 @@ public interface TypeMapperService {
 
     TypeMapper<QueryResult> getQueryResult(Set<String> returnTypes);
     TypeMapper<List<Map<String, Object>>> getList(Set<String> returnTypes);
+    TypeMapper<List<String>> getStrList(String field);
 }

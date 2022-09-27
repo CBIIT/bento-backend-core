@@ -42,6 +42,8 @@ public class YamlQueryFactory {
             switch (query.getResult().getType()) {
             case Const.YAML_QUERY.RESULT_TYPE.OBJECT_ARRAY:
                 return typeMapper.getList(param.getReturnTypes());
+            case Const.YAML_QUERY.RESULT_TYPE.STRING_ARRAY:
+                return typeMapper.getStrList(query.getFilter().getSelectedField());
             default:
                 throw new IllegalArgumentException(query.getResult().getType() + " is not correctly declared as a return type in yaml file. Please, correct it and try again.");
             }

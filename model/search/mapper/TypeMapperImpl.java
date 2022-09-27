@@ -15,6 +15,24 @@ public class TypeMapperImpl implements TypeMapperService {
         return (response) -> getMaps(response, returnTypes);
     }
 
+    @Override
+    public TypeMapper<List<String>> getStrList(String field) {
+        return (response) -> createStrList(response, field);
+    }
+
+    // Required Only One Argument
+    @NotNull
+    private List<String> createStrList(SearchResponse response, String field) {
+        List<String> result = new ArrayList<>();
+        SearchHit[] hits = response.getHits().getHits();
+        Arrays.asList(hits).forEach(hit-> {
+            Map<String, Object> source = hit.getSourceAsMap();
+            if (!source.containsKey(field)) throw new IllegalArgumentException();
+            result.add((String) source.get(field));
+        });
+        return result;
+    }
+
     @NotNull
     private List<Map<String, Object>> getMaps(SearchResponse response, Set<String> returnTypes) {
         return getListHits(response, returnTypes);
