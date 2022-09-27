@@ -21,9 +21,6 @@ public class ConfigurationDAO {
 	//Bento API Version
 	@Value("${bento.api.version}")
 	private String bentoApiVersion;
-	//Project
-	@Value("${project:bento}")
-	private String project;
 
 	//Enable authentication check
 	@Value("${auth.enabled}")
