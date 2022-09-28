@@ -3,6 +3,7 @@ package gov.nih.nci.bento.model.search.yaml;
 import gov.nih.nci.bento.constants.Const;
 import gov.nih.nci.bento.model.search.filter.DefaultFilter;
 import gov.nih.nci.bento.model.search.filter.FilterParam;
+import gov.nih.nci.bento.model.search.filter.PaginationFilter;
 import gov.nih.nci.bento.model.search.mapper.TypeMapperImpl;
 import gov.nih.nci.bento.model.search.mapper.TypeMapperService;
 import gov.nih.nci.bento.model.search.yaml.filter.YamlFilter;
@@ -61,9 +62,27 @@ public class YamlQueryFactory {
                             .caseInsensitive(filterType.isCaseInsensitive())
                             .ignoreIfEmpty(filterType.getIgnoreIfEmpty()).build())
                             .getSourceFilter();
+                case Const.YAML_QUERY.FILTER.PAGINATION:
+                    return new PaginationFilter(FilterParam.builder()
+                            .args(param.getArgs())
+//                            .queryParam(param)
+
+                            .defaultSortField(filterType.getSortDirection())
+                            .ignoreIfEmpty(filterType.getIgnoreIfEmpty())
+
+//                            .customOrderBy(getIntCustomOrderBy(param, query))
+                            .defaultSortField(filterType.getDefaultSortField())
+                            .build()).getSourceFilter();
                 default:
                     throw new IllegalArgumentException(filterType + " is not correctly declared as a filter type in yaml file. Please, correct it and try again.");
             }
         };
     }
+
+//    private String getIntCustomOrderBy(QueryParam param, YamlQuery query) {
+//        String orderKey = param.getTableParam().getOrderBy();
+//        if (query.getFilter().getAlternativeSortField() == null) return orderKey;
+//        Map<String, String> alternativeSortMap = query.getFilter().getAlternativeSortField();
+//        return alternativeSortMap.getOrDefault(orderKey, "");
+//    }
 }

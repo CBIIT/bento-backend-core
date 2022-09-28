@@ -1,10 +1,13 @@
 package gov.nih.nci.bento.model.search.filter;
 
 import gov.nih.nci.bento.constants.Const;
+import gov.nih.nci.bento.model.search.query.TableParam;
 import org.opensearch.index.query.QueryBuilders;
 import org.opensearch.search.builder.SearchSourceBuilder;
+import org.opensearch.search.sort.SortOrder;
 
 import java.util.*;
+
 
 public class IgnoreEmptyFilter {
 
@@ -25,10 +28,22 @@ public class IgnoreEmptyFilter {
         }
     }
 
+    public static String getAlternativeSortType(FilterParam param) {
+        // TODO CHECK
+        if (param.getCustomOrderBy() != null && !param.getCustomOrderBy().equals("")) return param.getCustomOrderBy();
+        return tableParam.getOrderBy().equals("") ? param.getDefaultSortField() : tableParam.getOrderBy();
+    }
+
     private SearchSourceBuilder getAllDataQuery() {
         SearchSourceBuilder builder = new SearchSourceBuilder()
                 .query(QueryBuilders.matchAllQuery())
-                .size(Const.ES_UNITS.MAX_SIZE);
+                .size(param.getSize() == -1 ? Const.ES_UNITS.MAX_SIZE : param.getSize());
+
+        if (param.getSortDirection() != null)
+            builder.sort(getAlternativeSortType(param), param.getSortDirection());
+        if (param.getOffSet() != -1) {
+            builder.from(param.getOffSet());
+        }
         return builder;
     }
 
