@@ -32,6 +32,7 @@ public class Const {
 
         public static class FILTER {
             public static final String DEFAULT = "default";
+            public static final String PAGINATION = "pagination";
         }
 
         public static class RESULT_TYPE {
