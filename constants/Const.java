@@ -36,6 +36,7 @@ public class Const {
 
         public static class RESULT_TYPE {
             public static final String OBJECT_ARRAY = "object_array";
+            public static final String STRING_ARRAY = "str_array";
         }
     }
 

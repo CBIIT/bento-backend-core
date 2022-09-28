@@ -38,11 +38,12 @@ public class QueryParam {
         SchemaElementChildrenContainer container = outputType.getChildrenWithTypeReferences();
 
         List<GraphQLSchemaElement> elements = container.getChildrenAsList();
-        elements.forEach((e) -> {
+        for (GraphQLSchemaElement e : elements) {
+            if (e instanceof GraphQLScalarType) continue;
             GraphQLObjectType type = (GraphQLObjectType) e;
             List<GraphQLFieldDefinition> lists = type.getFieldDefinitions();
             lists.forEach(field -> defaultSet.add(field.getName()));
-        });
+        }
 
         return ReturnType.builder()
                 .fields(defaultSet)
