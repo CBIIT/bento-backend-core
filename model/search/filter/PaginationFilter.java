@@ -11,14 +11,15 @@ public class PaginationFilter extends AbstractFilter {
 
     @Override
     SearchSourceBuilder getFilter(FilterParam param, QueryFactory bentoParam) {
+        FilterParam.Pagination page = param.getPagination();
         return new SearchSourceBuilder()
                 .query(
                         bentoParam.getQuery()
                 )
-                .from(param.getOffSet())
+                .from(page.getOffSet())
                 .sort(
-                        param.getOrderBy(),
-                        param.getSortDirection())
-                .size(param.getPageSize());
+                        page.getOrderBy(),
+                        page.getSortDirection())
+                .size(page.getPageSize());
     }
 }
