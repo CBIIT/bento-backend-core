@@ -47,12 +47,12 @@ public class FilterParam {
         @Builder
         public Pagination(Map<String, Object> args, String defaultSortField, Map<String, String> alternativeSortField) {
             this.args = args;
+            this.defaultSortField = defaultSortField;
             this.offSet = getPageOffSet();
             this.pageSize = getSize();
             this.sortDirection = getSortType();
             this.orderBy = getOrderByText();
             this.pageOrderBy = getCustomOrderBy(alternativeSortField);
-            this.defaultSortField = defaultSortField;
         }
 
         private int getPageOffSet() {
@@ -65,7 +65,8 @@ public class FilterParam {
         }
 
         private String getOrderByText() {
-            return args.containsKey(Const.ES_PARAMS.ORDER_BY) ? (String) args.get(Const.ES_PARAMS.ORDER_BY) : "";
+            String orderBy = args.containsKey(Const.ES_PARAMS.ORDER_BY) ? (String) args.get(Const.ES_PARAMS.ORDER_BY) : "";
+            return orderBy.equals("") ? defaultSortField : orderBy;
         }
 
         private SortOrder getSortType() {
@@ -79,11 +80,10 @@ public class FilterParam {
             return sort.equalsIgnoreCase("asc") ? SortOrder.ASC : SortOrder.DESC;
         }
 
-        private String getCustomOrderBy(Map<String, String> alternativeSortField) {
+        private String getCustomOrderBy(Map<String, String> alternativeSortMap) {
             String orderKey = getOrderByText();
-            if (alternativeSortField == null) return orderKey;
-            Map<String, String> alternativeSortMap = alternativeSortField;
-            return alternativeSortMap.getOrDefault(orderKey, "");
+            if (alternativeSortMap == null) return orderKey;
+            return alternativeSortMap.getOrDefault(orderKey, orderKey);
         }
     }
 }
