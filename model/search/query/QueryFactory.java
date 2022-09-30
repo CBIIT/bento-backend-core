@@ -5,6 +5,7 @@ import gov.nih.nci.bento.model.search.filter.FilterParam;
 import org.opensearch.index.query.BoolQueryBuilder;
 import org.opensearch.index.query.QueryBuilder;
 import org.opensearch.index.query.QueryBuilders;
+import org.opensearch.index.query.RangeQueryBuilder;
 
 import java.util.*;
 
@@ -44,9 +45,10 @@ public class QueryFactory {
     }
 
     private QueryBuilder getRangeType(String field, List<String> strList) {
-        return QueryBuilders.rangeQuery(field)
-                .gte(strList.get(0))
-                .lte(strList.get(1));
+        RangeQueryBuilder rangeBuilder = QueryBuilders.rangeQuery(field)
+                .gte(strList.get(0));
+        if (strList.size() > 1) rangeBuilder.lte(strList.get(1));
+        return rangeBuilder;
     }
 
     private void removeSortParams(Map<String, Object> map) {
