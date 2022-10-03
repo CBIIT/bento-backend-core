@@ -3,7 +3,6 @@ package gov.nih.nci.bento.model.search.yaml.filter;
 import lombok.Data;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -21,6 +20,7 @@ public class YamlFilter {
     private int size;
     private Map<String, String> alternativeSortField;
     private Set<String> ignoreIfEmpty = new HashSet<>();
+    private Set<String> rangeFilterFields;
 
 //    // Global Query Sets
 //    private List<YamlGlobalFilterType.GlobalQuerySet> searches;

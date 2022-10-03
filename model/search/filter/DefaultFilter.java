@@ -12,9 +12,11 @@ public class DefaultFilter extends AbstractFilter {
 
     @Override
     SearchSourceBuilder getFilter(FilterParam param, QueryFactory bentoParam) {
+        FilterParam.Pagination page = param.getPagination();
         SearchSourceBuilder builder = new SearchSourceBuilder()
                 .query(bentoParam.getQuery());
         builder.size(Const.ES_UNITS.MAX_SIZE);
+        if (page.getOrderBy() != null && !page.getOrderBy().equals("")) builder.sort(page.getOrderBy(), page.getSortDirection());
         return builder;
     }
 }
