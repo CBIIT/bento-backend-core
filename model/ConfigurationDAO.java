@@ -77,4 +77,8 @@ public class ConfigurationDAO {
 	private boolean esFilterEnabled;
 	@Value("${es.sign.requests:true}")
 	private boolean esSignRequests;
+
+	//Testing
+	@Value("${test.queries_file}")
+	private String testQueriesFile;
 }
