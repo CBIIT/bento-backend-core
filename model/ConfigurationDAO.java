@@ -81,6 +81,7 @@ public class ConfigurationDAO {
 	private String serviceName;
 	@Value("${es.region}")
 	private String region;
+	
 	//Testing
 	@Value("${test.queries_file}")
 	private String testQueriesFile;
