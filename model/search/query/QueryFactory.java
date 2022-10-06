@@ -23,6 +23,15 @@ public class QueryFactory {
         // remove sort params
         removeSortParams(args);
 
+        // Filter; excludes its field
+        // TODO
+        if (filterParam.isRangeFilter()) {
+            // Consider Remove Keyword
+            String key = filterParam.getSelectedField();
+            if (args.containsKey(key)) args.remove(key);
+        }
+
+
         for (Map.Entry<String, Object> entry : args.entrySet()) {
             String key = entry.getKey();
             @SuppressWarnings("unchecked")

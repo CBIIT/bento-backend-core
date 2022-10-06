@@ -40,9 +40,18 @@ public class QueryParam {
         List<GraphQLSchemaElement> elements = container.getChildrenAsList();
         for (GraphQLSchemaElement e : elements) {
             if (e instanceof GraphQLScalarType) continue;
-            GraphQLObjectType type = (GraphQLObjectType) e;
-            List<GraphQLFieldDefinition> lists = type.getFieldDefinitions();
-            lists.forEach(field -> defaultSet.add(field.getName()));
+//            GraphQLObjectType type = (GraphQLObjectType) e;
+//            List<GraphQLFieldDefinition> lists = type.getFieldDefinitions();
+//            lists.forEach(field -> defaultSet.add(field.getName()));
+            if (e instanceof GraphQLObjectType) {
+                GraphQLObjectType type = (GraphQLObjectType) e;
+                List<GraphQLFieldDefinition> lists = type.getFieldDefinitions();
+                lists.forEach(field -> defaultSet.add(field.getName()));
+                // TODO
+            } else if (e instanceof GraphQLFieldDefinition){
+                GraphQLFieldDefinition field = (GraphQLFieldDefinition) e;
+                defaultSet.add(field.getName());
+            }
         }
 
         return ReturnType.builder()

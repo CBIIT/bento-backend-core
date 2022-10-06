@@ -11,4 +11,13 @@ public interface TypeMapperService {
     TypeMapper<QueryResult> getQueryResult(Set<String> returnTypes);
     TypeMapper<List<Map<String, Object>>> getList(Set<String> returnTypes);
     TypeMapper<List<String>> getStrList(String field);
+    TypeMapper<Map<String, Object>> getRange();
+    TypeMapper<Long> getIntTotal();
+    TypeMapper<List<Map<String, Object>>> getAggregate();
+    TypeMapper<Integer> getAggregateTotalCnt();
+    TypeMapper<Integer> getNestedAggregateTotalCnt();
+    TypeMapper<QueryResult> getNestedAggregate();
+    TypeMapper<Float> getSumAggregate();
+    TypeMapper<List<Map<String, Object>>> getNestedAggregateList();
+    TypeMapper<List<Map<String, Object>>> getArmProgram();
 }

@@ -1,16 +1,29 @@
 package gov.nih.nci.bento.model.search.mapper;
 
+import gov.nih.nci.bento.constants.Const;
 import gov.nih.nci.bento.model.search.query.QueryResult;
+import org.apache.lucene.search.TotalHits;
 import org.jetbrains.annotations.NotNull;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.search.SearchHit;
+import org.opensearch.search.aggregations.Aggregation;
+import org.opensearch.search.aggregations.Aggregations;
+import org.opensearch.search.aggregations.bucket.filter.ParsedFilter;
+import org.opensearch.search.aggregations.bucket.nested.ParsedNested;
+import org.opensearch.search.aggregations.bucket.terms.ParsedStringTerms;
+import org.opensearch.search.aggregations.bucket.terms.Terms;
+import org.opensearch.search.aggregations.metrics.ParsedMax;
+import org.opensearch.search.aggregations.metrics.ParsedMin;
+import org.opensearch.search.aggregations.metrics.Sum;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 public class TypeMapperImpl implements TypeMapperService {
 
+    @Override
     public TypeMapper<List<Map<String, Object>>> getList(Set<String> returnTypes) {
         return (response) -> getMaps(response, returnTypes);
     }
@@ -18,6 +31,122 @@ public class TypeMapperImpl implements TypeMapperService {
     @Override
     public TypeMapper<List<String>> getStrList(String field) {
         return (response) -> createStrList(response, field);
+    }
+
+    @Override
+    public TypeMapper<Map<String, Object>> getRange() {
+        return (response) -> {
+            Aggregations aggregate = response.getAggregations();
+            Map<String, Aggregation> responseMap = aggregate.getAsMap();
+            Map<String, Object> result = new HashMap<>();
+
+            ParsedMax max = (ParsedMax) responseMap.get("max");
+            ParsedMin min = (ParsedMin) responseMap.get("min");
+
+            result.put(Const.YAML_QUERY.RESULT_TYPE.RANGE_PARAMS.LOWER_BOUND, (float) min.getValue());
+            result.put(Const.YAML_QUERY.RESULT_TYPE.RANGE_PARAMS.UPPER_BOUND, (float) max.getValue());
+            // TODO this is only for bento
+            result.put("subjects", response.getHits().getTotalHits().value);
+            return result;
+        };
+    }
+
+    @Override
+    public TypeMapper<Long> getIntTotal() {
+        return (response) -> {
+            TotalHits hits = response.getHits().getTotalHits();
+            return hits.value;
+        };
+    }
+
+    @Override
+    public TypeMapper<List<Map<String, Object>>> getAggregate() {
+        return (response) -> {
+            List<Map<String, Object>> result = new ArrayList<>();
+            Aggregations aggregate = response.getAggregations();
+            Terms terms = aggregate.get(Const.ES_PARAMS.TERMS_AGGS);
+            List<Terms.Bucket> buckets = (List<Terms.Bucket>) terms.getBuckets();
+            buckets.forEach(bucket->
+                    result.add(
+                            Map.of(
+                                    Const.BENTO_FIELDS.GROUP,bucket.getKey(),
+                                    Const.BENTO_FIELDS.SUBJECTS,bucket.getDocCount()
+                            )
+                    )
+            );
+            return result;
+        };
+    }
+
+    @Override
+    public TypeMapper<Integer> getAggregateTotalCnt() {
+        return (response) -> {
+            Aggregations aggregate = response.getAggregations();
+            Terms terms = aggregate.get(Const.ES_PARAMS.TERMS_AGGS);
+            long totalCount = terms.getBuckets().size() + terms.getSumOfOtherDocCounts();
+            return (int) totalCount;
+        };
+    }
+
+    @Override
+    public TypeMapper<Integer> getNestedAggregateTotalCnt() {
+        return (response) -> {
+            ParsedFilter aggFilters = getParsedFilter(response);
+            ParsedStringTerms aggTerms = aggFilters.getAggregations().get(Const.ES_PARAMS.TERMS_AGGS);
+            List<Terms.Bucket> buckets = (List<Terms.Bucket>) aggTerms.getBuckets();
+            long totalCount = buckets.size() + aggTerms.getSumOfOtherDocCounts();
+            return (int) totalCount;
+        };
+    }
+
+    @Override
+    public TypeMapper<QueryResult> getNestedAggregate() {
+        return this::getNestedAggregate;
+    }
+
+    private QueryResult getNestedAggregate(SearchResponse response) {
+        List<Map<String, Object>> result = new ArrayList<>();
+        ParsedFilter aggFilters = getParsedFilter(response);
+        ParsedStringTerms aggTerms = aggFilters.getAggregations().get(Const.ES_PARAMS.TERMS_AGGS);
+        List<Terms.Bucket> buckets = (List<Terms.Bucket>) aggTerms.getBuckets();
+
+        AtomicLong totalCount = new AtomicLong();
+        buckets.forEach((b)-> {
+            totalCount.addAndGet(b.getDocCount());
+            result.add(Map.of(
+                    // TODO only for bento
+                    Const.BENTO_FIELDS.GROUP, b.getKey(),
+                    Const.BENTO_INDEX.SUBJECTS, b.getDocCount()
+            ));
+        });
+        return QueryResult.builder()
+                .searchHits(result)
+                .totalHits(aggTerms.getSumOfOtherDocCounts() + totalCount.longValue())
+                .build();
+    }
+
+    private ParsedFilter getParsedFilter(SearchResponse response) {
+        Aggregations aggregate = response.getAggregations();
+        ParsedNested aggNested = (ParsedNested) aggregate.getAsMap().get(Const.ES_PARAMS.NESTED_SEARCH);
+        // Get Nested Sub aggregation
+        return aggNested.getAggregations().get(Const.ES_PARAMS.NESTED_FILTER);
+    }
+
+    @Override
+    public TypeMapper<Float> getSumAggregate() {
+        return (response) -> {
+            Sum agg = response.getAggregations().get(Const.ES_PARAMS.TERMS_AGGS);
+            return (float) agg.getValue();
+        };
+    }
+
+    @Override
+    public TypeMapper<List<Map<String, Object>>> getNestedAggregateList() {
+        return (response) -> {
+            QueryResult<List<Map<String, Object>>> queryResult = getNestedAggregate(response);
+            List<Map<String, Object>> result =queryResult.getSearchHits();
+            return result;
+        };
     }
 
     // Required Only One Argument
@@ -38,6 +167,7 @@ public class TypeMapperImpl implements TypeMapperService {
         return getListHits(response, returnTypes);
     }
 
+    @Override
     public TypeMapper<QueryResult> getQueryResult(Set<String> returnTypes) {
         return (response) -> getDefaultMaps(response, returnTypes);
     }
@@ -48,6 +178,41 @@ public class TypeMapperImpl implements TypeMapperService {
                 .searchHits(getListHits(response, returnTypes))
                 .totalHits(response.getHits().getTotalHits().value)
                 .build();
+    }
+
+    // TODO
+    @SuppressWarnings("unchecked")
+    public TypeMapper<List<Map<String, Object>>> getArmProgram() {
+        return (response) -> {
+            Aggregations aggregate = response.getAggregations();
+            Terms terms = aggregate.get(Const.ES_PARAMS.TERMS_AGGS);
+            List<Terms.Bucket> buckets = (List<Terms.Bucket>) terms.getBuckets();
+            List<Map<String, Object>> result = new ArrayList<>();
+            buckets.forEach(bucket-> {
+                        Aggregations subAggregate = bucket.getAggregations();
+                        Terms subTerms = subAggregate.get(Const.ES_PARAMS.TERMS_AGGS);
+                        List<Terms.Bucket> subBuckets = (List<Terms.Bucket>) subTerms.getBuckets();
+                        List<Map<String, Object>> studies = new ArrayList<>();
+                        subBuckets.forEach((subBucket)->
+                                studies.add(Map.of(
+                                        // TODO mapping needs to be isolated
+                                        Const.BENTO_FIELDS.ARM,subBucket.getKey(),
+                                        Const.BENTO_FIELDS.CASE_SIZE,subBucket.getDocCount(),
+                                        Const.BENTO_FIELDS.SIZE,subBucket.getDocCount()
+                                ))
+                        );
+                        result.add(
+                                Map.of(
+                                        // TODO mapping needs to be isolated
+                                        Const.BENTO_FIELDS.PROGRAM, bucket.getKey(),
+                                        Const.BENTO_FIELDS.CASE_SIZE,bucket.getDocCount(),
+                                        Const.BENTO_FIELDS.CHILDREN, studies
+                                )
+                        );
+                    }
+            );
+            return result;
+        };
     }
 
     private List<Map<String, Object>> getListHits(SearchResponse response, Set<String> returnTypes) {

@@ -18,16 +18,31 @@ public class FilterParam {
     private final boolean caseInsensitive;
     private final Set<String> rangeFilterFields;
     private final Pagination pagination;
+    private final boolean isExcludeFilter;
+    private boolean ignoreSelectedField;
+    private final String subAggSelectedField;
+    private final String nestedPath;
+    // TODO check
+    private final boolean isRangeFilter;
+    private final Set<String> nestedParameters;
 
     @Builder
     public FilterParam(Map<String, Object> args, String selectedField, Set<String> ignoreIfEmpty,
                        boolean caseInsensitive, String defaultSortField, Map<String, String> alternativeSortField,
-                       Set<String> rangeFilterFields) {
+                       boolean isExcludeFilter,boolean ignoreSelectedField,String subAggSelectedField,
+                       boolean isRangeFilter,
+                       Set<String> rangeFilterFields, Set<String> nestedParameters, String nestedPath) {
         this.args = args;
         this.selectedField = selectedField;
+        this.subAggSelectedField = subAggSelectedField;
         this.ignoreIfEmpty = ignoreIfEmpty;
         this.caseInsensitive = caseInsensitive;
         this.rangeFilterFields = rangeFilterFields == null ? new HashSet<>() : rangeFilterFields;
+        this.nestedParameters = nestedParameters != null ? nestedParameters : new HashSet<>();
+        this.ignoreSelectedField = ignoreSelectedField;
+        this.nestedPath = nestedPath;
+        this.isExcludeFilter = isExcludeFilter;
+        this.isRangeFilter = isRangeFilter;
         this.pagination = new Pagination.PaginationBuilder()
                 .args(args)
                 .alternativeSortField(alternativeSortField)
