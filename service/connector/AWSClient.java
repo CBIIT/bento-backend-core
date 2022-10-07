@@ -29,7 +29,7 @@ public class AWSClient extends AbstractClient {
 
         return new RestHighLevelClient(
                 RestClient.builder(
-                        new HttpHost(config.getEsHost().trim(), config.getEsPort(), config.getEsScheme())).setHttpClientConfigCallback(hacb -> hacb.addInterceptorLast(interceptor)).setCompressionEnabled(false));
+                        new HttpHost(config.getEsHost().trim(), config.getEsPort(), config.getEsScheme())).setHttpClientConfigCallback(hacb -> hacb.addInterceptorLast(interceptor)));
     }
 
     @Override
