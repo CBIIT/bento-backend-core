@@ -13,6 +13,8 @@ import org.opensearch.client.RestHighLevelClient;
 public class AWSClient extends AbstractClient {
 
     static final AWSCredentialsProvider credentialsProvider = new DefaultAWSCredentialsProviderChain();
+    private final String serviceName = "es";
+    private final String regionName = "us-east-1";
 
     public AWSClient(ConfigurationDAO config) {
         super(config);
@@ -21,21 +23,21 @@ public class AWSClient extends AbstractClient {
     @Override
     public RestHighLevelClient getElasticClient() {
         AWS4Signer signer = new AWS4Signer();
-        signer.setServiceName(config.getServiceName());
-        signer.setRegionName(config.getRegion());
-        HttpRequestInterceptor interceptor = new AWSRequestSigningApacheInterceptor(config.getServiceName(), signer, credentialsProvider);
+        signer.setServiceName(serviceName);
+        signer.setRegionName(regionName);
+        HttpRequestInterceptor interceptor = new AWSRequestSigningApacheInterceptor(serviceName, signer, credentialsProvider);
 
         return new RestHighLevelClient(
                 RestClient.builder(
-                        new HttpHost(config.getEsHost().trim(), config.getEsPort(), config.getEsScheme())).setHttpClientConfigCallback(hacb -> hacb.addInterceptorLast(interceptor)));
+                        new HttpHost(config.getEsHost().trim(), config.getEsPort(), config.getEsScheme())).setHttpClientConfigCallback(hacb -> hacb.addInterceptorLast(interceptor)).setCompressionEnabled(false));
     }
 
     @Override
     public RestClient getLowLevelElasticClient() {
         AWS4Signer signer = new AWS4Signer();
-        signer.setServiceName(config.getServiceName());
-        signer.setRegionName(config.getRegion());
-        HttpRequestInterceptor interceptor = new AWSRequestSigningApacheInterceptor(config.getServiceName(), signer, credentialsProvider);
+        signer.setServiceName(serviceName);
+        signer.setRegionName(regionName);
+        HttpRequestInterceptor interceptor = new AWSRequestSigningApacheInterceptor(serviceName, signer, credentialsProvider);
         return RestClient.builder(new HttpHost(config.getEsHost().trim(), config.getEsPort(), config.getEsScheme())).setHttpClientConfigCallback(hacb -> hacb.addInterceptorLast(interceptor)).build();
     }
 }
