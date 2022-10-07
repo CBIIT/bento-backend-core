@@ -11,6 +11,8 @@ import gov.nih.nci.bento.model.search.yaml.filter.YamlQuery;
 import gov.nih.nci.bento.service.ESService;
 import graphql.schema.DataFetcher;
 import lombok.RequiredArgsConstructor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.opensearch.action.search.SearchRequest;
 import org.springframework.core.io.ClassPathResource;
 import org.yaml.snakeyaml.Yaml;
@@ -23,14 +25,17 @@ import java.util.Map;
 public class SingleTypeYaml extends AbstractYamlType {
 
     private final ESService esService;
+    private static final Logger logger = LogManager.getLogger(SingleTypeYaml.class);
 
-    private List<YamlQuery> readYamlFile() throws IOException {
+    private List<YamlQuery> readYamlFile(ClassPathResource resource) throws IOException {
+        logger.info("Yaml single file query loading...");
         Yaml yaml = new Yaml(new Constructor(SingleTypeQuery.class));
-        SingleTypeQuery singleTypeQuery = yaml.load(new ClassPathResource(Const.YAML_QUERY.FILE_NAMES_BENTO.SINGLE).getInputStream());
+        SingleTypeQuery singleTypeQuery = yaml.load(resource.getInputStream());
         return singleTypeQuery.getQueries();
     }
 
     private Object multipleSend(YamlQuery query, QueryParam param, ITypeQuery iTypeQuery, IFilterType iFilterType) throws IOException {
+        logger.info("Single yaml search API requested: " + query.getName());
         Map<String, QueryResult> multipleSendResult = esService.elasticMultiSend(
                 List.of(MultipleRequests.builder()
                         .name(query.getName())
@@ -43,7 +48,9 @@ public class SingleTypeYaml extends AbstractYamlType {
 
     @Override
     public void createSearchQuery(Map<String, DataFetcher> resultMap, ITypeQuery iTypeQuery, IFilterType iFilterType) throws IOException {
-        readYamlFile().forEach(query->
+        ClassPathResource resource = new ClassPathResource(Const.YAML_QUERY.FILE_NAMES_BENTO.SINGLE);
+        if (!resource.exists()) return;
+        readYamlFile(resource).forEach(query->
                 resultMap.put(query.getName(), env -> multipleSend(query, createQueryParam(env), iTypeQuery, iFilterType))
         );
     }

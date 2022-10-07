@@ -22,6 +22,7 @@ public class QueryFactory {
         Map<String, Object> args = new HashMap<>(filterParam.getArgs());
         // remove sort params
         removeSortParams(args);
+        removeRangeParams(args);
 
         for (Map.Entry<String, Object> entry : args.entrySet()) {
             String key = entry.getKey();
@@ -49,6 +50,13 @@ public class QueryFactory {
                 .gte(strList.get(0));
         if (strList.size() > 1) rangeBuilder.lte(strList.get(1));
         return rangeBuilder;
+    }
+
+    private void removeRangeParams(Map<String, Object> map) {
+        if (filterParam.isRangeFilter()) {
+            String key = filterParam.getSelectedField();
+            if (map.containsKey(key)) map.remove(key);
+        }
     }
 
     private void removeSortParams(Map<String, Object> map) {
