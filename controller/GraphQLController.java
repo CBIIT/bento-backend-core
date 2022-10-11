@@ -28,11 +28,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.io.IOException;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -68,65 +65,15 @@ public class GraphQLController {
 			produces = MediaType.APPLICATION_JSON_VALUE + "; charset=utf-8")
 	public ResponseEntity<String> getNeo4jVersion(HttpEntity<String> httpEntity){
 		logger.info("Hit end point: /neo4j-version");
-		try{
-			//Build URI and GraphQL query
-			URI uri = new URI(config.getNeo4jUrl());
-			String neo4jVersionQuery = "{\"query\":\"{neo4jVersion}\",\"variables\":{}}";
-			//Create request HttpEntity
-			httpEntity = new HttpEntity<>(neo4jVersionQuery, httpEntity.getHeaders());
-			//Send request
-			ResponseEntity<String> responseEntity = getGraphQLResponse(httpEntity, bentoGraphQL.getPublicGraphQL());
-			JsonObject jsonResponseBody = gson.fromJson(responseEntity.getBody(), JsonObject.class);
-			if (jsonResponseBody.has("errors")){
-				return responseEntity;
-			}
-			//Parse version from response
-			String version = gson.fromJson(responseEntity.getBody(), JsonObject.class)
-					.get("data").getAsJsonObject()
-					.get("neo4jVersion").getAsString();
-			//Format and return info
-			return ResponseEntity.ok(gson.toJson(new DataSourceVersion(uri, version)));
-		}
-		catch (Exception e){
-			return logAndReturnError(HttpStatus.INTERNAL_SERVER_ERROR,
-					"An internal server error occurred, please contact the system custodians", e);
-		}
+		return new Neo4jVersionQuery(httpEntity).queryDataSourceVersion();
 	}
 
 	@CrossOrigin
 	@RequestMapping(value = "/opensearch-version", method = {RequestMethod.GET},
 			produces = MediaType.APPLICATION_JSON_VALUE + "; charset=utf-8")
-	public ResponseEntity<String> getOpenSearchVersion(){
+	public ResponseEntity<String> getOpenSearchVersion(HttpEntity<String> httpEntity){
 		logger.info("Hit end point: /opensearch-version");
-		try{
-			//Build URI
-			URIBuilder builder = new URIBuilder()
-					.setScheme("http")
-					.setHost(config.getEsHost())
-					.setPort(config.getEsPort());
-			URI uri = builder.build();
-			//Send request
-			HttpClient client = HttpClient.newHttpClient();
-			HttpRequest request = HttpRequest.newBuilder()
-					.uri(uri)
-					.GET()
-					.build();
-			//Parse version from response
-			HttpResponse response =  client.send(request, HttpResponse.BodyHandlers.ofString());
-			String versionString = gson.fromJson((String) response.body(), JsonObject.class)
-					.get("version").getAsJsonObject()
-					.get("number").getAsString();
-			//Format and return info
-			return ResponseEntity.ok(gson.toJson(new DataSourceVersion(uri, versionString)));
-		}
-		catch (IOException|InterruptedException e) {
-			return logAndReturnError(HttpStatus.NOT_FOUND,
-					"The OpenSearch service could not be reached", e);
-		}
-		catch (Exception e){
-			return logAndReturnError(HttpStatus.INTERNAL_SERVER_ERROR, "An internal server error occurred, " +
-					"please contact the system custodians", e);
-		}
+		return new OpenSearchVersionQuery(httpEntity).queryDataSourceVersion();
 	}
 
 	@CrossOrigin
@@ -220,29 +167,97 @@ public class GraphQLController {
 		return logAndReturnError(status, errors);
 	}
 
-	private ResponseEntity logAndReturnError(HttpStatus status, String error, Exception e){
-		logger.error(e);
-		return logAndReturnError(status, error);
+	private abstract class VersionQuery{
+
+		URI uri;
+		private HttpEntity httpEntity;
+
+		VersionQuery(String query, HttpEntity httpEntity) {
+			this.httpEntity = new HttpEntity<>(query, httpEntity.getHeaders());
+		}
+
+		ResponseEntity<String> queryDataSourceVersion(){
+			URI uri;
+			try{
+				uri = buildUri();
+				ResponseEntity<String> responseEntity = getGraphQLResponse(httpEntity,bentoGraphQL.getPublicGraphQL());
+				JsonObject jsonResponseBody = gson.fromJson(responseEntity.getBody(), JsonObject.class);
+				if (jsonResponseBody.has("errors")){
+					jsonResponseBody.getAsJsonArray("errors").forEach(x-> logger.error(x.getAsJsonObject()
+							.getAsJsonPrimitive("message").getAsString()));
+					return responseEntity;
+				}
+				return ResponseEntity.ok(gson.toJson(new DataSourceVersion(uri, parseVersion(jsonResponseBody))));
+			}
+			catch (URISyntaxException e){
+				logger.error("Invalid data source URI, please verify that the URI information in the configuration " +
+						"file is correct");
+				return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("The data source URI is invald" +
+						"please notify the administrators");
+			}
+			catch (Exception e) {
+				logger.error(e);
+				return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An internal server error has " +
+						"occurred, please notify the administrators");
+			}
+		}
+
+		abstract String parseVersion(JsonObject jsonObject);
+
+		abstract URI buildUri() throws URISyntaxException;
+
+		@Getter
+		private class DataSourceVersion {
+
+			private final String version;
+			private final String scheme;
+			private final String host;
+			private final String port;
+
+			private DataSourceVersion(URI uri, String version){
+				this.version = version;
+				this.scheme = uri.getScheme();
+				this.host = uri.getHost();
+				this.port = String.valueOf(uri.getPort());
+			}
+		}
 	}
 
-	private ResponseEntity logAndReturnError(HttpStatus status, List<String> errors, Exception e){
-		logger.error(e);
-		return logAndReturnError(status, errors);
+	private class Neo4jVersionQuery extends VersionQuery{
+
+		Neo4jVersionQuery(HttpEntity httpEntity) {
+			super("{\"query\":\"{neo4jVersion}\",\"variables\":{}}", httpEntity);
+		}
+
+		@Override
+		public String parseVersion(JsonObject jsonObject){
+			return jsonObject.get("data").getAsJsonObject().get("neo4jVersion").getAsString();
+		}
+
+		@Override
+		URI buildUri() throws URISyntaxException {
+			return new URI(config.getNeo4jUrl());
+		}
 	}
 
-	@Getter
-	private class DataSourceVersion {
+	private class OpenSearchVersionQuery extends VersionQuery{
+		OpenSearchVersionQuery(HttpEntity httpEntity){
+			super("{\"query\":\"{esVersion}\",\"variables\":{}}",	httpEntity);
+		}
 
-		private final String version;
-		private final String protocol;
-		private final String host;
-		private final String port;
+		@Override
+		public String parseVersion(JsonObject jsonResponseBody) {
+			return jsonResponseBody.getAsJsonObject("data")
+					.getAsJsonPrimitive("esVersion").getAsString();
+		}
 
-		private DataSourceVersion(URI uri, String version){
-			this.version = version;
-			this.protocol = uri.getScheme();
-			this.host = uri.getHost();
-			this.port = String.valueOf(uri.getPort());
+		@Override
+		URI buildUri() throws URISyntaxException {
+			return new URIBuilder()
+					.setScheme(config.getEsScheme())
+					.setHost(config.getEsHost())
+					.setPort(config.getEsPort())
+					.build();
 		}
 	}
 }
