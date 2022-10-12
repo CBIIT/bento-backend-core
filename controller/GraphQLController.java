@@ -177,9 +177,7 @@ public class GraphQLController {
 		}
 
 		ResponseEntity<String> queryDataSourceVersion(){
-			URI uri;
 			try{
-				uri = buildUri();
 				ResponseEntity<String> responseEntity = getGraphQLResponse(httpEntity,bentoGraphQL.getPublicGraphQL());
 				JsonObject jsonResponseBody = gson.fromJson(responseEntity.getBody(), JsonObject.class);
 				if (jsonResponseBody.has("errors")){
@@ -187,13 +185,7 @@ public class GraphQLController {
 							.getAsJsonPrimitive("message").getAsString()));
 					return responseEntity;
 				}
-				return ResponseEntity.ok(gson.toJson(new DataSourceVersion(uri, parseVersion(jsonResponseBody))));
-			}
-			catch (URISyntaxException e){
-				logger.error("Invalid data source URI, please verify that the URI information in the configuration " +
-						"file is correct");
-				return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("The data source URI is invald" +
-						"please notify the administrators");
+				return ResponseEntity.ok(gson.toJson(Map.of("version", parseVersion(jsonResponseBody))));
 			}
 			catch (Exception e) {
 				logger.error(e);
@@ -203,24 +195,6 @@ public class GraphQLController {
 		}
 
 		abstract String parseVersion(JsonObject jsonObject);
-
-		abstract URI buildUri() throws URISyntaxException;
-
-		@Getter
-		private class DataSourceVersion {
-
-			private final String version;
-			private final String scheme;
-			private final String host;
-			private final String port;
-
-			private DataSourceVersion(URI uri, String version){
-				this.version = version;
-				this.scheme = uri.getScheme();
-				this.host = uri.getHost();
-				this.port = String.valueOf(uri.getPort());
-			}
-		}
 	}
 
 	private class Neo4jVersionQuery extends VersionQuery{
@@ -234,10 +208,6 @@ public class GraphQLController {
 			return jsonObject.get("data").getAsJsonObject().get("neo4jVersion").getAsString();
 		}
 
-		@Override
-		URI buildUri() throws URISyntaxException {
-			return new URI(config.getNeo4jUrl());
-		}
 	}
 
 	private class OpenSearchVersionQuery extends VersionQuery{
@@ -249,15 +219,6 @@ public class GraphQLController {
 		public String parseVersion(JsonObject jsonResponseBody) {
 			return jsonResponseBody.getAsJsonObject("data")
 					.getAsJsonPrimitive("esVersion").getAsString();
-		}
-
-		@Override
-		URI buildUri() throws URISyntaxException {
-			return new URIBuilder()
-					.setScheme(config.getEsScheme())
-					.setHost(config.getEsHost())
-					.setPort(config.getEsPort())
-					.build();
 		}
 	}
 }
