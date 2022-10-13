@@ -3,6 +3,7 @@ package gov.nih.nci.bento.model.search.yaml.filter;
 import lombok.Data;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -22,16 +23,16 @@ public class YamlFilter {
     private Set<String> ignoreIfEmpty = new HashSet<>();
     private Set<String> rangeFilterFields;
 
-//    // Global Query Sets
-//    private List<YamlGlobalFilterType.GlobalQuerySet> searches;
-//    // Desired type search query; boolean, integer
-//    private List<YamlGlobalFilterType.GlobalQuerySet> typedSearch;
+    // Global Query Sets
+    private List<YamlGlobalFilterType.GlobalQuerySet> searches;
+    // Desired type search query; boolean, integer
+    private List<YamlGlobalFilterType.GlobalQuerySet> typedSearch;
 
-//    @Data
-//    public static  class GlobalQuerySet {
-//        private String field;
-//        private String type;
-//        private String option;
-//        private boolean caseInsensitive;
-//    }
+    @Data
+    public static  class GlobalQuerySet {
+        private String field;
+        private String type;
+        private String option;
+        private boolean caseInsensitive;
+    }
 }

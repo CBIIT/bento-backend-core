@@ -5,6 +5,7 @@ import gov.nih.nci.bento.model.search.query.QueryResult;
 import org.apache.lucene.search.TotalHits;
 import org.jetbrains.annotations.NotNull;
 import org.opensearch.action.search.SearchResponse;
+import org.opensearch.common.text.Text;
 import org.opensearch.search.SearchHit;
 import org.opensearch.search.aggregations.Aggregation;
 import org.opensearch.search.aggregations.Aggregations;
@@ -15,6 +16,7 @@ import org.opensearch.search.aggregations.bucket.terms.Terms;
 import org.opensearch.search.aggregations.metrics.ParsedMax;
 import org.opensearch.search.aggregations.metrics.ParsedMin;
 import org.opensearch.search.aggregations.metrics.Sum;
+import org.opensearch.search.fetch.subphase.highlight.HighlightField;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -232,4 +234,28 @@ public class TypeMapperImpl implements TypeMapperService {
                 .filter(source::containsKey)
                 .collect(HashMap::new, (k,v)->k.put(v, source.get(v)), HashMap::putAll);
     }
+
+    @Override
+    public TypeMapper<QueryResult> getHighLightFragments(String field, HighLightMapper mapper) {
+        return (response) -> {
+            List<Map<String, Object>> result = new ArrayList<>();
+            SearchHit[] hits = response.getHits().getHits();
+            Arrays.asList(hits).forEach(hit-> {
+                Map<String, HighlightField> highlightFieldMap = hit.getHighlightFields();
+                Map<String, Object> source = hit.getSourceAsMap();
+                HighlightField highlightField = highlightFieldMap.get(field);
+                Text[] texts = highlightField.getFragments();
+                Arrays.stream(texts).forEach(text->
+                        result.add(
+                                mapper.getMap(source, text)
+                        )
+                );
+            });
+            return QueryResult.builder()
+                    .searchHits(result)
+                    .totalHits(response.getHits().getTotalHits().value)
+                    .build();
+        };
+    }
+
 }

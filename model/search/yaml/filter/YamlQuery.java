@@ -10,5 +10,5 @@ public class YamlQuery {
     private YamlResult result;
     private YamlFilter filter;
 //    private YamlDynamicFilter dynamicFilter;
-//    private YamlHighlight highlight;
+    private YamlHighlight highlight;
 }

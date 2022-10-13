@@ -1,6 +1,7 @@
 package gov.nih.nci.bento.model.search.query;
 
 import gov.nih.nci.bento.constants.Const;
+import gov.nih.nci.bento.model.search.filter.FilterParam;
 import graphql.schema.*;
 import lombok.Builder;
 import lombok.Getter;
@@ -16,13 +17,25 @@ public class QueryParam {
     private final Set<String> returnTypes;
     private final String searchText;
 
+//    private final FilterParam.Pagination pagination;
+
     @Builder
     public QueryParam(Map<String, Object> args, GraphQLOutputType outputType) {
         ReturnType returnType = getReturnType(outputType);
         this.args = args;
         this.returnTypes = returnType.fields;
+//        this.pagination = setTableParam(args);
         this.searchText = args.containsKey(Const.ES_PARAMS.INPUT) ?  (String) args.get(Const.ES_PARAMS.INPUT) : "";
     }
+
+//    private FilterParam.Pagination setTableParam(Map<String, Object> args) {
+//        return FilterParam.Pagination.builder()
+//                .offSet(args.containsKey(Const.ES_PARAMS.OFFSET) ?  (int) args.get(Const.ES_PARAMS.OFFSET) : -1)
+//                .pageSize(getPageSize(args))
+//                .orderBy(getOrderByText(args))
+//                .sortDirection(getSortType())
+//                .build();
+//    }
 
     @Getter
     private static class ReturnType {
