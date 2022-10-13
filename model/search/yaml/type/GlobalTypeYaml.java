@@ -5,6 +5,7 @@ import gov.nih.nci.bento.constants.Const;
 import gov.nih.nci.bento.model.search.MultipleRequests;
 import gov.nih.nci.bento.model.search.query.QueryParam;
 import gov.nih.nci.bento.model.search.query.QueryResult;
+import gov.nih.nci.bento.model.search.yaml.GroupTypeQuery;
 import gov.nih.nci.bento.model.search.yaml.IFilterType;
 import gov.nih.nci.bento.model.search.yaml.ITypeQuery;
 import gov.nih.nci.bento.model.search.yaml.SingleTypeQuery;
@@ -33,7 +34,10 @@ public class GlobalTypeYaml extends AbstractYamlType {
     private List<YamlQuery> readYamlFile(ClassPathResource resource) throws IOException {
         logger.info("Yaml global file query loading...");
         Yaml yaml = new Yaml(new Constructor(SingleTypeQuery.class));
-        return yaml.load(resource.getInputStream());
+
+        SingleTypeQuery singleTypeQuery = yaml.load(resource.getInputStream());
+
+        return singleTypeQuery.getQueries();
     }
 
     private Object globalMultipleSend(QueryParam param, YamlQuery query, ITypeQuery iTypeQuery, IFilterType iFilterType) throws IOException {

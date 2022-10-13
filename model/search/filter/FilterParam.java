@@ -25,6 +25,7 @@ public class FilterParam {
     // TODO check
     private final boolean isRangeFilter;
     private final Set<String> nestedParameters;
+    private final String searchText;
 
     @Builder
     public FilterParam(Map<String, Object> args, String selectedField, Set<String> ignoreIfEmpty,
@@ -47,6 +48,7 @@ public class FilterParam {
                 .args(args)
                 .alternativeSortField(alternativeSortField)
                 .defaultSortField(defaultSortField).build();
+        this.searchText = args.containsKey(Const.ES_PARAMS.INPUT) ?  (String) args.get(Const.ES_PARAMS.INPUT) : "";
     }
 
     @Getter

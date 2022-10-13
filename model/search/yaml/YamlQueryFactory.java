@@ -10,10 +10,10 @@ import gov.nih.nci.bento.model.search.yaml.filter.YamlGlobalFilterType;
 import gov.nih.nci.bento.model.search.yaml.filter.YamlHighlight;
 import gov.nih.nci.bento.model.search.yaml.filter.YamlQuery;
 import gov.nih.nci.bento.model.search.yaml.type.AbstractYamlType;
+import gov.nih.nci.bento.model.search.yaml.type.GlobalTypeYaml;
 import gov.nih.nci.bento.model.search.yaml.type.GroupTypeYaml;
 import gov.nih.nci.bento.model.search.yaml.type.SingleTypeYaml;
 import gov.nih.nci.bento.service.ESService;
-import gov.nih.nci.bento.utility.StrUtil;
 import graphql.schema.DataFetcher;
 import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
@@ -24,11 +24,10 @@ import org.opensearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.opensearch.search.sort.SortOrder;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @RequiredArgsConstructor
 public class YamlQueryFactory {
@@ -40,7 +39,7 @@ public class YamlQueryFactory {
     public Map<String, DataFetcher> createYamlQueries() throws IOException {
         logger.info("Loading Yaml File Queries");
         // Set Single Request API
-        List<AbstractYamlType> yamlFileList = List.of(new SingleTypeYaml(esService), new GroupTypeYaml(esService));
+        List<AbstractYamlType> yamlFileList = List.of(new SingleTypeYaml(esService), new GroupTypeYaml(esService),new GlobalTypeYaml(esService));
         Map<String, DataFetcher> result = new HashMap<>();
         for (AbstractYamlType yamlFile : yamlFileList) {
             yamlFile.createSearchQuery(result, getReturnType(), getFilterType());
@@ -78,6 +77,8 @@ public class YamlQueryFactory {
                 return typeMapper.getNestedAggregate();
             case Const.YAML_QUERY.RESULT_TYPE.NESTED_LIST:
                 return typeMapper.getNestedAggregateList();
+            case Const.YAML_QUERY.RESULT_TYPE.GLOBAL:
+                return typeMapper.getQueryResult(param.getGlobalSearchResultTypes());
             case Const.YAML_QUERY.RESULT_TYPE.GLOBAL_ABOUT:
                 return typeMapper.getHighLightFragments(query.getFilter().getSelectedField(),
                         (source, text) -> Map.of(
@@ -85,6 +86,10 @@ public class YamlQueryFactory {
                                 Const.BENTO_FIELDS.PAGE, source.get(Const.BENTO_FIELDS.PAGE),
                                 Const.BENTO_FIELDS.TITLE,source.get(Const.BENTO_FIELDS.TITLE),
                                 Const.BENTO_FIELDS.TEXT, text));
+
+            case Const.YAML_QUERY.RESULT_TYPE.GLOBAL_MULTIPLE_MODEL:
+                return typeMapper.getMapWithHighlightedFields(param.getGlobalSearchResultTypes());
+
             default:
                 throw new IllegalArgumentException(query.getResult().getType() + " is not correctly declared as a return type in yaml file. Please, correct it and try again.");
             }
@@ -145,7 +150,13 @@ public class YamlQueryFactory {
                                     .build())
                             .getSourceFilter();
                 case Const.YAML_QUERY.FILTER.GLOBAL:
-                    return createGlobalQuery(param,query);
+                    return createGlobalQuery(FilterParam.builder()
+                            .args(param.getArgs())
+                            .isExcludeFilter(filterType.isIgnoreSelectedField())
+                            .selectedField(filterType.getSelectedField())
+                            .nestedPath(filterType.getNestedPath())
+                            .nestedParameters(filterType.getNestedParameters())
+                            .build(),query);
                 case Const.YAML_QUERY.FILTER.SUM:
                     return new SumFilter(
                             FilterParam.builder()
@@ -160,7 +171,7 @@ public class YamlQueryFactory {
     }
 
     // TODO
-    private SearchSourceBuilder createGlobalQuery(QueryParam param, YamlQuery query) {
+    private SearchSourceBuilder createGlobalQuery(FilterParam param, YamlQuery query) {
         FilterParam.Pagination page = param.getPagination();
         // Store Conditional Query
         SearchSourceBuilder builder = new SearchSourceBuilder()
@@ -179,17 +190,39 @@ public class YamlQueryFactory {
     }
 
 
+    // TODO
+    public static String getBoolText(String text) {
+        String strPattern = "(?i)(\\bfalse\\b|\\btrue\\b)";
+        return getStr(strPattern, text).toLowerCase();
+    }
 
-    private List<QueryBuilder> createGlobalConditionalQueries(QueryParam param, YamlQuery query) {
+    // TODO
+    public static String getIntText(String text) {
+        String strPattern = "(\\b[0-9]+\\b)";
+        return getStr(strPattern, text);
+    }
+
+    private static String getStr(String strPattern, String text) {
+        String str = Optional.ofNullable(text).orElse("");
+        Pattern pattern = Pattern.compile(strPattern);
+        Matcher matcher = pattern.matcher(str);
+        String result = "";
+        if (matcher.find()) result = matcher.group(1);
+        return result;
+    }
+
+
+
+    private List<QueryBuilder> createGlobalConditionalQueries(FilterParam param, YamlQuery query) {
         if (query.getFilter().getTypedSearch() == null) return new ArrayList<>();
         List<QueryBuilder> conditionalList = new ArrayList<>();
         List<YamlGlobalFilterType.GlobalQuerySet> typeQuerySets = query.getFilter().getTypedSearch() ;
         AtomicReference<String> filterString = new AtomicReference<>("");
         typeQuerySets.forEach(option-> {
             if (option.getOption().equals(Const.YAML_QUERY.QUERY_TERMS.BOOLEAN)) {
-                filterString.set(StrUtil.getBoolText(param.getSearchText()));
+                filterString.set(getBoolText(param.getSearchText()));
             } else if (option.getOption().equals(Const.YAML_QUERY.QUERY_TERMS.INTEGER)) {
-                filterString.set(StrUtil.getIntText(param.getSearchText()));
+                filterString.set(getIntText(param.getSearchText()));
             } else {
                 throw new IllegalArgumentException();
             }
@@ -239,7 +272,7 @@ public class YamlQueryFactory {
     }
 
 
-    private BoolQueryBuilder createGlobalQuerySets(QueryParam param, YamlQuery query) {
+    private BoolQueryBuilder createGlobalQuerySets(FilterParam param, YamlQuery query) {
         BoolQueryBuilder boolQueryBuilder = new BoolQueryBuilder();
         List<YamlGlobalFilterType.GlobalQuerySet> globalQuerySets = query.getFilter().getSearches();
         // Add Should Query

@@ -1,3 +1,4 @@
+/*
 package gov.nih.nci.bento.utility;
 
 import java.util.Optional;
@@ -24,4 +25,4 @@ public class StrUtil {
         if (matcher.find()) result = matcher.group(1);
         return result;
     }
-}
+}*/

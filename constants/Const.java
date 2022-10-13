@@ -28,6 +28,10 @@ public class Const {
             public static final String SINGLE = "yaml/single_search_es.yml";
             public static final String GROUP = "yaml/facet_search_es.yml";
             public static final String GLOBAL = "yaml/global_search_es.yml";
+
+
+
+
         }
 
         public static class FILTER {
@@ -50,6 +54,8 @@ public class Const {
         }
 
         public static class RESULT_TYPE {
+            public static final String GLOBAL = "global";
+            public static final String GLOBAL_MULTIPLE_MODEL = "global_multi_models";
             public static final String OBJECT_ARRAY = "object_array";
             public static final String STRING_ARRAY = "str_array";
             public static final String GROUP_COUNT = "group_count";
@@ -94,9 +100,11 @@ public class Const {
         public static final String TITLE = "title";
         public static final String TYPE = "type";
         public static final String TEXT = "text";
+        public static final String HIGHLIGHT = "highlight";
     }
 
     public static class BENTO_INDEX {
         public static final String SUBJECTS = "subjects";
     }
+
 }

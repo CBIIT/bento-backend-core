@@ -258,4 +258,30 @@ public class TypeMapperImpl implements TypeMapperService {
         };
     }
 
+
+    @Override
+    public TypeMapper<QueryResult> getMapWithHighlightedFields(Set<String> returnTypes) {
+        return (response) -> {
+            List<Map<String, Object>> result = new ArrayList<>();
+            SearchHit[] hits = response.getHits().getHits();
+            Arrays.asList(hits).forEach(hit-> {
+                Map<String, HighlightField> highlightFieldMap = hit.getHighlightFields();
+                Map<String, Object> source = hit.getSourceAsMap();
+
+                Map<String, Object> returnMap = parseReturnMap(returnTypes, source);
+                highlightFieldMap.forEach((k,highlightField)->{
+                    Text[] texts = highlightField.getFragments();
+                    Optional<String> text = Arrays.stream(texts).findFirst().map(Text::toString).stream().findFirst();
+                    // Set Highlight Field & Get First Found Match Keyword
+                    text.ifPresent(v->returnMap.put(Const.BENTO_FIELDS.HIGHLIGHT, v));
+                });
+                if (returnMap.size() > 0) result.add(returnMap);
+            });
+            return QueryResult.builder()
+                    .searchHits(result)
+                    .totalHits(response.getHits().getTotalHits().value)
+                    .build();
+        };
+    }
+
 }
