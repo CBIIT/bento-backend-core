@@ -1,7 +1,9 @@
 package gov.nih.nci.bento.error;
 
+import lombok.Getter;
 import java.util.List;
 
+@Getter
 public class BentoGraphQLException extends Exception{
     BentoGraphqlError bentoGraphqlError;
 
@@ -11,9 +13,5 @@ public class BentoGraphQLException extends Exception{
 
     public BentoGraphQLException(List<String> errors){
         this.bentoGraphqlError = new BentoGraphqlError(errors);
-    }
-
-    public BentoGraphqlError getBentoGraphqlError(){
-        return bentoGraphqlError;
     }
 }

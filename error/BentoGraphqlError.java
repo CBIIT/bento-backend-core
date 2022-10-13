@@ -1,10 +1,12 @@
 package gov.nih.nci.bento.error;
 
 import com.google.gson.annotations.SerializedName;
+import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Getter
 public class BentoGraphqlError {
     @SerializedName("errors")
     List<Message> errors;
@@ -28,16 +30,13 @@ public class BentoGraphqlError {
         return errorStrings;
     }
 
+    @Getter
     private class Message{
         @SerializedName("message")
         private String message;
 
         Message(String message){
             this.message = message;
-        }
-
-        public String getMessage() {
-            return message;
         }
     }
 }
