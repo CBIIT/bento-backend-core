@@ -30,14 +30,14 @@ public class SingleTypeYaml extends AbstractYamlType {
     private static final Logger logger = LogManager.getLogger(SingleTypeYaml.class);
 
     private List<YamlQuery> readYamlFile(ClassPathResource resource) throws IOException {
-        logger.info("Yaml single file query loading...");
+        logger.info(String.format("%s Yaml single file query loading...", accessType.toString()));
         Yaml yaml = new Yaml(new Constructor(SingleTypeQuery.class));
         SingleTypeQuery singleTypeQuery = yaml.load(resource.getInputStream());
         return singleTypeQuery.getQueries();
     }
 
     private Object multipleSend(YamlQuery query, QueryParam param, ITypeQuery iTypeQuery, IFilterType iFilterType) throws IOException {
-        logger.info("Single yaml search API requested: " + query.getName());
+        logger.info(String.format("%s single Yaml search API requested: %s", accessType.toString(), query.getName()));
         Map<String, QueryResult> multipleSendResult = esService.elasticMultiSend(
                 List.of(MultipleRequests.builder()
                         .name(query.getName())

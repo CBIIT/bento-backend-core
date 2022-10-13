@@ -29,14 +29,14 @@ public class GroupTypeYaml extends AbstractYamlType {
     private final ES_ACCESS_TYPE accessType;
 
     private List<GroupTypeQuery.Group> readYamlFile(ClassPathResource resource) throws IOException {
-        logger.info("Yaml group file query loading...");
+        logger.info(String.format("%s Yaml group file query loading...", accessType.toString()));
         Yaml groupYaml = new Yaml(new Constructor(GroupTypeQuery.class));
         GroupTypeQuery groupTypeQuery = groupYaml.load(resource.getInputStream());
         return groupTypeQuery.getQueries();
     }
 
     private <T> Map<String, T> multipleSend(GroupTypeQuery.Group group, QueryParam param, ITypeQuery iTypeQuery, IFilterType iFilterType) throws IOException {
-        logger.info("Group Search API Requested: " + group.getName());
+        logger.info(String.format("%s group Yaml search API requested: %s", accessType.toString(), group.getName()));
         List<MultipleRequests> requests = new ArrayList<>();
         group.getReturnFields().forEach(q->
                 requests.add(MultipleRequests.builder()
