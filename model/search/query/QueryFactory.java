@@ -20,8 +20,8 @@ public class QueryFactory {
     public QueryBuilder getQuery() {
         BoolQueryBuilder boolBuilder = new BoolQueryBuilder();
         Map<String, Object> args = new HashMap<>(filterParam.getArgs());
-        // remove sort params
-        removeSortParams(args);
+        // remove custom params
+        removeCustomParams(args);
 
         for (Map.Entry<String, Object> entry : args.entrySet()) {
             String key = entry.getKey();
@@ -51,9 +51,15 @@ public class QueryFactory {
         return rangeBuilder;
     }
 
-    private void removeSortParams(Map<String, Object> map) {
+    private void removeCustomParams(Map<String, Object> args) {
+        // remove range filter parameter(max / min)
+        if (filterParam.isExcludeFilter() || filterParam.isRangeFilter()) {
+            String key = filterParam.getSelectedField();
+            if (args.containsKey(key)) args.remove(key);
+        }
+
         sortParams.forEach(key -> {
-            if (map.containsKey(key)) map.remove(key);
+            if (args.containsKey(key)) args.remove(key);
         });
     }
 

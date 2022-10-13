@@ -1,0 +1,58 @@
+package gov.nih.nci.bento.model.search.yaml.type;
+
+import gov.nih.nci.bento.constants.Const;
+import gov.nih.nci.bento.model.search.MultipleRequests;
+import gov.nih.nci.bento.model.search.query.QueryParam;
+import gov.nih.nci.bento.model.search.yaml.GroupTypeQuery;
+import gov.nih.nci.bento.model.search.yaml.IFilterType;
+import gov.nih.nci.bento.model.search.yaml.ITypeQuery;
+import gov.nih.nci.bento.service.ESService;
+import graphql.schema.DataFetcher;
+import lombok.RequiredArgsConstructor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.opensearch.action.search.SearchRequest;
+import org.springframework.core.io.ClassPathResource;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.Constructor;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+@RequiredArgsConstructor
+public class GroupTypeYaml extends AbstractYamlType {
+    private static final Logger logger = LogManager.getLogger(GroupTypeYaml.class);
+
+    private final ESService esService;
+
+    private List<GroupTypeQuery.Group> readYamlFile(ClassPathResource resource) throws IOException {
+        logger.info("Yaml group file query loading...");
+        Yaml groupYaml = new Yaml(new Constructor(GroupTypeQuery.class));
+        GroupTypeQuery groupTypeQuery = groupYaml.load(resource.getInputStream());
+        return groupTypeQuery.getQueries();
+    }
+
+    private <T> Map<String, T> multipleSend(GroupTypeQuery.Group group, QueryParam param, ITypeQuery iTypeQuery, IFilterType iFilterType) throws IOException {
+        logger.info("Group Search API Requested: " + group.getName());
+        List<MultipleRequests> requests = new ArrayList<>();
+        group.getReturnFields().forEach(q->
+                requests.add(MultipleRequests.builder()
+                .name(q.getName())
+                .request(new SearchRequest()
+                        .indices(q.getIndex())
+                        .source(iFilterType.getQueryFilter(param, q)))
+                .typeMapper(iTypeQuery.getReturnType(param, q)).build()));
+        return esService.elasticMultiSend(requests);
+    }
+
+    @Override
+    public void createSearchQuery(Map<String, DataFetcher> resultMap, ITypeQuery iTypeQuery, IFilterType iFilterType) throws IOException {
+        ClassPathResource resource = new ClassPathResource(Const.YAML_QUERY.FILE_NAMES_BENTO.GROUP);
+        if (!resource.exists()) return;
+        readYamlFile(resource).forEach(group->{
+            String queryName = group.getName();
+            resultMap.put(queryName, env -> multipleSend(group, createQueryParam(env), iTypeQuery, iFilterType));
+        });
+    }
+}
