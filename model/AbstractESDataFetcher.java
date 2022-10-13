@@ -351,10 +351,4 @@ public abstract class AbstractESDataFetcher {
         }
         return result;
     }
-
-    protected int getNodeCount(String countEndpoint) throws IOException {
-        Request countRequest = new Request("GET", countEndpoint);
-        JsonObject countResult = esService.send(countRequest);
-        return countResult.get("count").getAsInt();
-    }
 }
