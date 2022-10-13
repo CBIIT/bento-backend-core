@@ -1,6 +1,7 @@
 package gov.nih.nci.bento.model.search.yaml.type;
 
-import gov.nih.nci.bento.constants.Const;
+import static gov.nih.nci.bento.constants.Const.ES_ACCESS_TYPE;
+import static gov.nih.nci.bento.constants.Const.YAML_QUERY;
 import gov.nih.nci.bento.model.search.MultipleRequests;
 import gov.nih.nci.bento.model.search.query.QueryParam;
 import gov.nih.nci.bento.model.search.yaml.GroupTypeQuery;
@@ -25,6 +26,7 @@ public class GroupTypeYaml extends AbstractYamlType {
     private static final Logger logger = LogManager.getLogger(GroupTypeYaml.class);
 
     private final ESService esService;
+    private final ES_ACCESS_TYPE accessType;
 
     private List<GroupTypeQuery.Group> readYamlFile(ClassPathResource resource) throws IOException {
         logger.info("Yaml group file query loading...");
@@ -48,7 +50,8 @@ public class GroupTypeYaml extends AbstractYamlType {
 
     @Override
     public void createSearchQuery(Map<String, DataFetcher> resultMap, ITypeQuery iTypeQuery, IFilterType iFilterType) throws IOException {
-        ClassPathResource resource = new ClassPathResource(Const.YAML_QUERY.FILE_NAMES_BENTO.GROUP);
+        String fileName = YAML_QUERY.SUB_FOLDER + getYamlFileName(accessType, YAML_QUERY.FILE_NAMES_BENTO.GROUP);
+        ClassPathResource resource = new ClassPathResource(fileName);
         if (!resource.exists()) return;
         readYamlFile(resource).forEach(group->{
             String queryName = group.getName();

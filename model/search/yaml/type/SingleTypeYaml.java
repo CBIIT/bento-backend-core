@@ -1,6 +1,7 @@
 package gov.nih.nci.bento.model.search.yaml.type;
 
-import gov.nih.nci.bento.constants.Const;
+import static gov.nih.nci.bento.constants.Const.ES_ACCESS_TYPE;
+import static gov.nih.nci.bento.constants.Const.YAML_QUERY;
 import gov.nih.nci.bento.model.search.MultipleRequests;
 import gov.nih.nci.bento.model.search.query.QueryParam;
 import gov.nih.nci.bento.model.search.query.QueryResult;
@@ -25,6 +26,7 @@ import java.util.Map;
 public class SingleTypeYaml extends AbstractYamlType {
 
     private final ESService esService;
+    private final ES_ACCESS_TYPE accessType;
     private static final Logger logger = LogManager.getLogger(SingleTypeYaml.class);
 
     private List<YamlQuery> readYamlFile(ClassPathResource resource) throws IOException {
@@ -48,7 +50,8 @@ public class SingleTypeYaml extends AbstractYamlType {
 
     @Override
     public void createSearchQuery(Map<String, DataFetcher> resultMap, ITypeQuery iTypeQuery, IFilterType iFilterType) throws IOException {
-        ClassPathResource resource = new ClassPathResource(Const.YAML_QUERY.FILE_NAMES_BENTO.SINGLE);
+        String fileName = YAML_QUERY.SUB_FOLDER + getYamlFileName(accessType, YAML_QUERY.FILE_NAMES_BENTO.SINGLE);
+        ClassPathResource resource = new ClassPathResource(fileName);
         if (!resource.exists()) return;
         readYamlFile(resource).forEach(query->
                 resultMap.put(query.getName(), env -> multipleSend(query, createQueryParam(env), iTypeQuery, iFilterType))
