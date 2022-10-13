@@ -51,7 +51,7 @@ public class QueryFactory {
         return rangeBuilder;
     }
 
-    private void removeCustomParams(Map<String, Object> map) {
+    private void removeCustomParams(Map<String, Object> args) {
         // remove range filter parameter(max / min)
         if (filterParam.isExcludeFilter() || filterParam.isRangeFilter()) {
             String key = filterParam.getSelectedField();
@@ -59,7 +59,7 @@ public class QueryFactory {
         }
 
         sortParams.forEach(key -> {
-            if (map.containsKey(key)) map.remove(key);
+            if (args.containsKey(key)) args.remove(key);
         });
     }
 
