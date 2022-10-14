@@ -6,6 +6,7 @@ import gov.nih.nci.bento.model.search.mapper.TypeMapperImpl;
 import gov.nih.nci.bento.model.search.mapper.TypeMapperService;
 import gov.nih.nci.bento.model.search.yaml.filter.YamlFilter;
 import gov.nih.nci.bento.model.search.yaml.type.AbstractYamlType;
+import gov.nih.nci.bento.model.search.yaml.type.GlobalTypeYaml;
 import gov.nih.nci.bento.model.search.yaml.type.GroupTypeYaml;
 import gov.nih.nci.bento.model.search.yaml.type.SingleTypeYaml;
 import gov.nih.nci.bento.service.ESService;
@@ -29,7 +30,7 @@ public class YamlQueryFactory {
     public Map<String, DataFetcher> createYamlQueries() throws IOException {
         logger.info("Loading Yaml File Queries");
         // Set Single Request API
-        List<AbstractYamlType> yamlFileList = List.of(new SingleTypeYaml(esService), new GroupTypeYaml(esService));
+        List<AbstractYamlType> yamlFileList = List.of(new SingleTypeYaml(esService), new GroupTypeYaml(esService),new GlobalTypeYaml(esService));
         Map<String, DataFetcher> result = new HashMap<>();
         for (AbstractYamlType yamlFile : yamlFileList) {
             yamlFile.createSearchQuery(result, getReturnType(), getFilterType());
@@ -67,6 +68,17 @@ public class YamlQueryFactory {
                 return typeMapper.getNestedAggregate();
             case Const.YAML_QUERY.RESULT_TYPE.NESTED_LIST:
                 return typeMapper.getNestedAggregateList();
+            case Const.YAML_QUERY.RESULT_TYPE.GLOBAL_MULTIPLE_MODEL:
+                return typeMapper.getMapWithHighlightedFields(param.getGlobalSearchResultTypes());
+            case Const.YAML_QUERY.RESULT_TYPE.GLOBAL:
+                return typeMapper.getList(param.getGlobalSearchResultTypes());
+            case Const.YAML_QUERY.RESULT_TYPE.GLOBAL_ABOUT:
+                return typeMapper.getHighLightFragments(query.getFilter().getSelectedField(),
+                        (source, text) -> Map.of(
+                                Const.BENTO_FIELDS.TYPE, Const.BENTO_FIELDS.ABOUT,
+                                Const.BENTO_FIELDS.PAGE, source.get(Const.BENTO_FIELDS.PAGE),
+                                Const.BENTO_FIELDS.TITLE,source.get(Const.BENTO_FIELDS.TITLE),
+                                Const.BENTO_FIELDS.TEXT, text));
             default:
                 throw new IllegalArgumentException(query.getResult().getType() + " is not correctly declared as a return type in yaml file. Please, correct it and try again.");
             }
@@ -126,6 +138,14 @@ public class YamlQueryFactory {
                                     .nestedParameters(filterType.getNestedParameters())
                                     .build())
                             .getSourceFilter();
+                case Const.YAML_QUERY.FILTER.GLOBAL:
+                    return new GlobalQueryFilter(FilterParam.builder()
+                            .args(param.getArgs())
+                            .isExcludeFilter(filterType.isIgnoreSelectedField())
+                            .selectedField(filterType.getSelectedField())
+                            .nestedPath(filterType.getNestedPath())
+                            .nestedParameters(filterType.getNestedParameters())
+                            .build(), query).getSourceFilter();
                 case Const.YAML_QUERY.FILTER.SUM:
                     return new SumFilter(
                             FilterParam.builder()

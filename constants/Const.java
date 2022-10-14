@@ -27,7 +27,11 @@ public class Const {
         public static class FILE_NAMES_BENTO {
             public static final String SINGLE = "yaml/single_search_es.yml";
             public static final String GROUP = "yaml/facet_search_es.yml";
-//            public static final String GLOBAL = "yaml/global_search_es.yml";
+            public static final String GLOBAL = "yaml/global_search_es.yml";
+
+
+
+
         }
 
         public static class FILTER {
@@ -38,9 +42,20 @@ public class Const {
             public static final String SUB_AGGREGATION = "sub_aggregation";
             public static final String NESTED = "nested";
             public static final String SUM = "sum";
+            public static final String GLOBAL = "global";
+        }
+
+        public static class QUERY_TERMS {
+            public static final String TERM = "term";
+            public static final String MATCH = "match";
+            public static final String WILD_CARD = "wildcard";
+            public static final String BOOLEAN = "boolean";
+            public static final String INTEGER = "integer";
         }
 
         public static class RESULT_TYPE {
+            public static final String GLOBAL = "global";
+            public static final String GLOBAL_MULTIPLE_MODEL = "global_multi_models";
             public static final String OBJECT_ARRAY = "object_array";
             public static final String STRING_ARRAY = "str_array";
             public static final String GROUP_COUNT = "group_count";
@@ -65,10 +80,13 @@ public class Const {
                 public static final String LOWER_BOUND = "lowerBound";
                 public static final String UPPER_BOUND = "upperBound";
             }
+
+            public static final String GLOBAL_ABOUT = "global_about";
         }
     }
     // consider removing this to use other projects
     public static class BENTO_FIELDS {
+        public static final String ABOUT = "about";
         public static final String SUBJECTS = "subjects";
         public static final String GROUP = "group";
 
@@ -77,9 +95,16 @@ public class Const {
         public static final String SIZE = "size";
         public static final String PROGRAM = "program";
         public static final String CHILDREN = "children";
+
+        public static final String PAGE = "page";
+        public static final String TITLE = "title";
+        public static final String TYPE = "type";
+        public static final String TEXT = "text";
+        public static final String HIGHLIGHT = "highlight";
     }
 
     public static class BENTO_INDEX {
         public static final String SUBJECTS = "subjects";
     }
+
 }
