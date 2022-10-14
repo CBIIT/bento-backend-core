@@ -236,7 +236,7 @@ public class TypeMapperImpl implements TypeMapperService {
     }
 
     @Override
-    public TypeMapper<QueryResult> getHighLightFragments(String field, HighLightMapper mapper) {
+    public TypeMapper<List<Map<String, Object>>> getHighLightFragments(String field, HighLightMapper mapper) {
         return (response) -> {
             List<Map<String, Object>> result = new ArrayList<>();
             SearchHit[] hits = response.getHits().getHits();
@@ -251,16 +251,13 @@ public class TypeMapperImpl implements TypeMapperService {
                         )
                 );
             });
-            return QueryResult.builder()
-                    .searchHits(result)
-                    .totalHits(response.getHits().getTotalHits().value)
-                    .build();
+            return result;
         };
     }
 
 
     @Override
-    public TypeMapper<QueryResult> getMapWithHighlightedFields(Set<String> returnTypes) {
+    public TypeMapper<List<Map<String, Object>>> getMapWithHighlightedFields(Set<String> returnTypes) {
         return (response) -> {
             List<Map<String, Object>> result = new ArrayList<>();
             SearchHit[] hits = response.getHits().getHits();
@@ -277,10 +274,7 @@ public class TypeMapperImpl implements TypeMapperService {
                 });
                 if (returnMap.size() > 0) result.add(returnMap);
             });
-            return QueryResult.builder()
-                    .searchHits(result)
-                    .totalHits(response.getHits().getTotalHits().value)
-                    .build();
+            return result;
         };
     }
 

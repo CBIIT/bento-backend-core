@@ -4,11 +4,7 @@ import gov.nih.nci.bento.constants.Const;
 import gov.nih.nci.bento.model.search.filter.*;
 import gov.nih.nci.bento.model.search.mapper.TypeMapperImpl;
 import gov.nih.nci.bento.model.search.mapper.TypeMapperService;
-import gov.nih.nci.bento.model.search.query.QueryParam;
 import gov.nih.nci.bento.model.search.yaml.filter.YamlFilter;
-import gov.nih.nci.bento.model.search.yaml.filter.YamlGlobalFilterType;
-import gov.nih.nci.bento.model.search.yaml.filter.YamlHighlight;
-import gov.nih.nci.bento.model.search.yaml.filter.YamlQuery;
 import gov.nih.nci.bento.model.search.yaml.type.AbstractYamlType;
 import gov.nih.nci.bento.model.search.yaml.type.GlobalTypeYaml;
 import gov.nih.nci.bento.model.search.yaml.type.GroupTypeYaml;
@@ -18,16 +14,11 @@ import graphql.schema.DataFetcher;
 import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.opensearch.index.query.*;
-import org.opensearch.search.builder.SearchSourceBuilder;
-import org.opensearch.search.fetch.subphase.highlight.HighlightBuilder;
-import org.opensearch.search.sort.SortOrder;
 
 import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @RequiredArgsConstructor
 public class YamlQueryFactory {
@@ -77,8 +68,10 @@ public class YamlQueryFactory {
                 return typeMapper.getNestedAggregate();
             case Const.YAML_QUERY.RESULT_TYPE.NESTED_LIST:
                 return typeMapper.getNestedAggregateList();
+            case Const.YAML_QUERY.RESULT_TYPE.GLOBAL_MULTIPLE_MODEL:
+                return typeMapper.getMapWithHighlightedFields(param.getGlobalSearchResultTypes());
             case Const.YAML_QUERY.RESULT_TYPE.GLOBAL:
-                return typeMapper.getQueryResult(param.getGlobalSearchResultTypes());
+                return typeMapper.getList(param.getGlobalSearchResultTypes());
             case Const.YAML_QUERY.RESULT_TYPE.GLOBAL_ABOUT:
                 return typeMapper.getHighLightFragments(query.getFilter().getSelectedField(),
                         (source, text) -> Map.of(
@@ -86,10 +79,6 @@ public class YamlQueryFactory {
                                 Const.BENTO_FIELDS.PAGE, source.get(Const.BENTO_FIELDS.PAGE),
                                 Const.BENTO_FIELDS.TITLE,source.get(Const.BENTO_FIELDS.TITLE),
                                 Const.BENTO_FIELDS.TEXT, text));
-
-            case Const.YAML_QUERY.RESULT_TYPE.GLOBAL_MULTIPLE_MODEL:
-                return typeMapper.getMapWithHighlightedFields(param.getGlobalSearchResultTypes());
-
             default:
                 throw new IllegalArgumentException(query.getResult().getType() + " is not correctly declared as a return type in yaml file. Please, correct it and try again.");
             }
@@ -150,13 +139,13 @@ public class YamlQueryFactory {
                                     .build())
                             .getSourceFilter();
                 case Const.YAML_QUERY.FILTER.GLOBAL:
-                    return createGlobalQuery(FilterParam.builder()
+                    return new GlobalQueryFilter(FilterParam.builder()
                             .args(param.getArgs())
                             .isExcludeFilter(filterType.isIgnoreSelectedField())
                             .selectedField(filterType.getSelectedField())
                             .nestedPath(filterType.getNestedPath())
                             .nestedParameters(filterType.getNestedParameters())
-                            .build(),query);
+                            .build(), query).getSourceFilter();
                 case Const.YAML_QUERY.FILTER.SUM:
                     return new SumFilter(
                             FilterParam.builder()
@@ -168,129 +157,5 @@ public class YamlQueryFactory {
                     throw new IllegalArgumentException(filterType + " is not correctly declared as a filter type in yaml file. Please, correct it and try again.");
             }
         };
-    }
-
-    // TODO
-    private SearchSourceBuilder createGlobalQuery(FilterParam param, YamlQuery query) {
-        FilterParam.Pagination page = param.getPagination();
-        // Store Conditional Query
-        SearchSourceBuilder builder = new SearchSourceBuilder()
-                .size(page.getPageSize())
-                .from(page.getOffSet())
-                .query(
-                        addConditionalQuery(
-                                createGlobalQuerySets(param, query),
-                                createGlobalConditionalQueries(param, query))
-                );
-        // Set Sort
-        if (query.getFilter().getDefaultSortField() !=null) builder.sort(query.getFilter().getDefaultSortField(), SortOrder.DESC);
-        // Set Highlight Query
-        setGlobalHighlightQuery(query, builder);
-        return builder;
-    }
-
-
-    // TODO
-    public static String getBoolText(String text) {
-        String strPattern = "(?i)(\\bfalse\\b|\\btrue\\b)";
-        return getStr(strPattern, text).toLowerCase();
-    }
-
-    // TODO
-    public static String getIntText(String text) {
-        String strPattern = "(\\b[0-9]+\\b)";
-        return getStr(strPattern, text);
-    }
-
-    private static String getStr(String strPattern, String text) {
-        String str = Optional.ofNullable(text).orElse("");
-        Pattern pattern = Pattern.compile(strPattern);
-        Matcher matcher = pattern.matcher(str);
-        String result = "";
-        if (matcher.find()) result = matcher.group(1);
-        return result;
-    }
-
-
-
-    private List<QueryBuilder> createGlobalConditionalQueries(FilterParam param, YamlQuery query) {
-        if (query.getFilter().getTypedSearch() == null) return new ArrayList<>();
-        List<QueryBuilder> conditionalList = new ArrayList<>();
-        List<YamlGlobalFilterType.GlobalQuerySet> typeQuerySets = query.getFilter().getTypedSearch() ;
-        AtomicReference<String> filterString = new AtomicReference<>("");
-        typeQuerySets.forEach(option-> {
-            if (option.getOption().equals(Const.YAML_QUERY.QUERY_TERMS.BOOLEAN)) {
-                filterString.set(getBoolText(param.getSearchText()));
-            } else if (option.getOption().equals(Const.YAML_QUERY.QUERY_TERMS.INTEGER)) {
-                filterString.set(getIntText(param.getSearchText()));
-            } else {
-                throw new IllegalArgumentException();
-            }
-
-            if (option.getType().equals(Const.YAML_QUERY.QUERY_TERMS.MATCH)) {
-                conditionalList.add(QueryBuilders.matchQuery(option.getField(), filterString));
-            } else if (option.getType().equals(Const.YAML_QUERY.QUERY_TERMS.TERM)) {
-                conditionalList.add(QueryBuilders.termQuery(option.getField(), filterString.get()));
-            } else {
-                throw new IllegalArgumentException();
-            }
-        });
-        return conditionalList;
-    }
-
-    // Add Conditional Query
-    private BoolQueryBuilder addConditionalQuery(BoolQueryBuilder builder, List<QueryBuilder> builders) {
-        builders.forEach(q->{
-            if (q.getName().equals(Const.YAML_QUERY.QUERY_TERMS.MATCH)) {
-                MatchQueryBuilder matchQuery = getQuery(q);
-                if (!matchQuery.value().equals("")) builder.should(q);
-            } else if (q.getName().equals(Const.YAML_QUERY.QUERY_TERMS.TERM)) {
-                TermQueryBuilder termQuery = getQuery(q);
-                if (!termQuery.value().equals("")) builder.should(q);
-            }
-        });
-        return builder;
-    }
-
-    @SuppressWarnings("unchecked")
-    private <T> T getQuery(QueryBuilder q) {
-        String queryType = q.getName();
-        return (T) q.queryName(queryType);
-    }
-
-    private void setGlobalHighlightQuery(YamlQuery query, SearchSourceBuilder builder) {
-        if (query.getHighlight() != null) {
-            HighlightBuilder highlightBuilder = new HighlightBuilder();
-            YamlHighlight yamlHighlight = query.getHighlight();
-            // Set Multiple Highlight Fields
-            yamlHighlight.getFields().forEach(highlightBuilder::field);
-            highlightBuilder.preTags(yamlHighlight.getPreTag() == null ? "" : yamlHighlight.getPreTag());
-            highlightBuilder.postTags(yamlHighlight.getPostTag() == null ? "" : yamlHighlight.getPostTag());
-            if (highlightBuilder.fragmentSize() != null) highlightBuilder.fragmentSize(yamlHighlight.getFragmentSize());
-            builder.highlighter(highlightBuilder);
-        }
-    }
-
-
-    private BoolQueryBuilder createGlobalQuerySets(FilterParam param, YamlQuery query) {
-        BoolQueryBuilder boolQueryBuilder = new BoolQueryBuilder();
-        List<YamlGlobalFilterType.GlobalQuerySet> globalQuerySets = query.getFilter().getSearches();
-        // Add Should Query
-        globalQuerySets.forEach(globalQuery -> {
-            switch (globalQuery.getType()) {
-                case Const.YAML_QUERY.QUERY_TERMS.TERM:
-                    boolQueryBuilder.should(QueryBuilders.termQuery(globalQuery.getField(), param.getSearchText()));
-                    break;
-                case Const.YAML_QUERY.QUERY_TERMS.WILD_CARD:
-                    boolQueryBuilder.should(QueryBuilders.wildcardQuery(globalQuery.getField(), "*" + param.getSearchText()+ "*").caseInsensitive(true));
-                    break;
-                case Const.YAML_QUERY.QUERY_TERMS.MATCH:
-                    boolQueryBuilder.should(QueryBuilders.matchQuery(globalQuery.getField(), param.getSearchText()));
-                    break;
-                default:
-                    throw new IllegalArgumentException();
-            }
-        });
-        return boolQueryBuilder;
     }
 }

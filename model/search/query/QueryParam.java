@@ -1,7 +1,6 @@
 package gov.nih.nci.bento.model.search.query;
 
 import gov.nih.nci.bento.constants.Const;
-import gov.nih.nci.bento.model.search.filter.FilterParam;
 import graphql.schema.*;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,26 +17,14 @@ public class QueryParam {
     private final String searchText;
     private final Set<String> globalSearchResultTypes;
 
-//    private final FilterParam.Pagination pagination;
-
     @Builder
     public QueryParam(Map<String, Object> args, GraphQLOutputType outputType) {
         ReturnType returnType = getReturnType(outputType);
         this.args = args;
         this.returnTypes = returnType.fields;
         this.globalSearchResultTypes = returnType.globalSet;
-        //        this.pagination = setTableParam(args);
         this.searchText = args.containsKey(Const.ES_PARAMS.INPUT) ?  (String) args.get(Const.ES_PARAMS.INPUT) : "";
     }
-
-//    private FilterParam.Pagination setTableParam(Map<String, Object> args) {
-//        return FilterParam.Pagination.builder()
-//                .offSet(args.containsKey(Const.ES_PARAMS.OFFSET) ?  (int) args.get(Const.ES_PARAMS.OFFSET) : -1)
-//                .pageSize(getPageSize(args))
-//                .orderBy(getOrderByText(args))
-//                .sortDirection(getSortType())
-//                .build();
-//    }
 
     @Getter
     private static class ReturnType {
@@ -60,24 +47,21 @@ public class QueryParam {
             if (e instanceof GraphQLScalarType) continue;
             if (e instanceof GraphQLObjectType) {
                 GraphQLObjectType type = (GraphQLObjectType) e;
-
-
-                if (type.getName().contains("GlobalSearch") && ((GraphQLFieldDefinition) e).getName().equals("result")) {
-                    e.getChildren().forEach(c -> {
-                        SchemaElementChildrenContainer container1 = c.getChildrenWithTypeReferences();
-                        List<?> fieldTypes = container1.getChildren("wrappedType");
-                        fieldTypes.forEach(fileType -> {
-                            GraphQLObjectType graphQLType = (GraphQLObjectType) fileType;
-                            List<GraphQLFieldDefinition> graphQLFieldDefinitionList = graphQLType.getFieldDefinitions();
-                            graphQLFieldDefinitionList.forEach(g -> globalSearchSet.add(g.getName()));
-                        });
-                    });
-                }
                 List<GraphQLFieldDefinition> lists = type.getFieldDefinitions();
                 lists.forEach(field -> defaultSet.add(field.getName()));
-                // TODO
-            } else if (e instanceof GraphQLFieldDefinition){
+            } else if (e instanceof GraphQLFieldDefinition) {
                 GraphQLFieldDefinition field = (GraphQLFieldDefinition) e;
+                List<GraphQLSchemaElement> obj = field.getChildren();
+                GraphQLObjectType outputObject = (GraphQLObjectType) outputType;
+                for (GraphQLSchemaElement global : obj) {
+                    if (outputObject.getName().contains("GlobalSearch") && global instanceof GraphQLScalarType == false) {
+                        // only one
+                        GraphQLObjectType graphQLObjectType = (GraphQLObjectType) global.getChildren().get(0);
+                        List<GraphQLFieldDefinition> lists = graphQLObjectType.getFieldDefinitions();
+                        lists.forEach(globalData -> globalSearchSet.add(globalData.getName()));
+                        continue;
+                    }
+                }
                 defaultSet.add(field.getName());
             }
         }

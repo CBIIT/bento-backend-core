@@ -20,7 +20,7 @@ public interface TypeMapperService {
     TypeMapper<Float> getSumAggregate();
     TypeMapper<List<Map<String, Object>>> getNestedAggregateList();
     TypeMapper<List<Map<String, Object>>> getArmProgram();
-    TypeMapper<QueryResult> getHighLightFragments(String field, HighLightMapper mapper);
-    TypeMapper<QueryResult> getMapWithHighlightedFields(Set<String> returnTypes);
+    TypeMapper<List<Map<String, Object>>> getHighLightFragments(String field, HighLightMapper mapper);
+    TypeMapper<List<Map<String, Object>>> getMapWithHighlightedFields(Set<String> returnTypes);
 
 }
