@@ -27,10 +27,10 @@ public class YamlQueryFactory {
     private final TypeMapperService typeMapper = new TypeMapperImpl();
     private static final Logger logger = LogManager.getLogger(YamlQueryFactory.class);
 
-    public Map<String, DataFetcher> createYamlQueries() throws IOException {
+    public Map<String, DataFetcher> createYamlQueries(Const.ES_ACCESS_TYPE accessType) throws IOException {
         logger.info("Loading Yaml File Queries");
         // Set Single Request API
-        List<AbstractYamlType> yamlFileList = List.of(new SingleTypeYaml(esService), new GroupTypeYaml(esService),new GlobalTypeYaml(esService));
+        List<AbstractYamlType> yamlFileList = List.of(new SingleTypeYaml(esService, accessType), new GroupTypeYaml(esService, accessType),new GlobalTypeYaml(esService, accessType));
         Map<String, DataFetcher> result = new HashMap<>();
         for (AbstractYamlType yamlFile : yamlFileList) {
             yamlFile.createSearchQuery(result, getReturnType(), getFilterType());
