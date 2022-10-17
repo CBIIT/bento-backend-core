@@ -25,17 +25,16 @@ public class GroupTypeYaml extends AbstractYamlType {
     private static final Logger logger = LogManager.getLogger(GroupTypeYaml.class);
 
     private final ESService esService;
-    private final Const.ES_ACCESS_TYPE accessType;
 
     private List<GroupTypeQuery.Group> readYamlFile(ClassPathResource resource) throws IOException {
-        logger.info(String.format("%s Yaml group file query loading...", accessType.toString()));
+        logger.info("Yaml group file query loading...");
         Yaml groupYaml = new Yaml(new Constructor(GroupTypeQuery.class));
         GroupTypeQuery groupTypeQuery = groupYaml.load(resource.getInputStream());
         return groupTypeQuery.getQueries();
     }
 
     private <T> Map<String, T> multipleSend(GroupTypeQuery.Group group, QueryParam param, ITypeQuery iTypeQuery, IFilterType iFilterType) throws IOException {
-        logger.info(String.format("%s group Yaml search API requested: %s", accessType.toString(), group.getName()));
+        logger.info("Group Search API Requested: " + group.getName());
         List<MultipleRequests> requests = new ArrayList<>();
         group.getReturnFields().forEach(q->
                 requests.add(MultipleRequests.builder()
@@ -49,8 +48,7 @@ public class GroupTypeYaml extends AbstractYamlType {
 
     @Override
     public void createSearchQuery(Map<String, DataFetcher> resultMap, ITypeQuery iTypeQuery, IFilterType iFilterType) throws IOException {
-        String fileName = Const.YAML_QUERY.SUB_FOLDER + getYamlFileName(accessType, Const.YAML_QUERY.FILE_NAMES_BENTO.GROUP);
-        ClassPathResource resource = new ClassPathResource(fileName);
+        ClassPathResource resource = new ClassPathResource(Const.YAML_QUERY.FILE_NAMES_BENTO.GROUP);
         if (!resource.exists()) return;
         readYamlFile(resource).forEach(group->{
             String queryName = group.getName();

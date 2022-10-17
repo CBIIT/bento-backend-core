@@ -27,17 +27,16 @@ public class GlobalTypeYaml extends AbstractYamlType {
 
     private static final Logger logger = LogManager.getLogger(GlobalTypeYaml.class);
     private final ESService esService;
-    private final Const.ES_ACCESS_TYPE accessType;
 
     private List<GroupTypeQuery.Group> readYamlFile(ClassPathResource resource) throws IOException {
-        logger.info(String.format("%s Yaml global file query loading...", accessType.toString()));
+        logger.info("Yaml global file query loading...");
         Yaml groupYaml = new Yaml(new Constructor(GroupTypeQuery.class));
         GroupTypeQuery groupTypeQuery = groupYaml.load(resource.getInputStream());
         return groupTypeQuery.getQueries();
     }
 
     private <T> Object multipleSend(GroupTypeQuery.Group group, QueryParam param, ITypeQuery iTypeQuery, IFilterType iFilterType) throws IOException {
-        logger.info(String.format("%s global Yaml search API requested: %s", accessType.toString(), group.getName()));
+        logger.info("Global Search API Requested: " + group.getName());
         List<MultipleRequests> requests = new ArrayList<>();
         group.getReturnFields().forEach(q->
                 requests.add(MultipleRequests.builder()
@@ -54,8 +53,7 @@ public class GlobalTypeYaml extends AbstractYamlType {
 
     @Override
     public void createSearchQuery(Map<String, DataFetcher> resultMap, ITypeQuery iTypeQuery, IFilterType iFilterType) throws IOException {
-        String fileName = Const.YAML_QUERY.SUB_FOLDER + getYamlFileName(accessType, Const.YAML_QUERY.FILE_NAMES_BENTO.GLOBAL);
-        ClassPathResource resource = new ClassPathResource(fileName);
+        ClassPathResource resource = new ClassPathResource(Const.YAML_QUERY.FILE_NAMES_BENTO.GLOBAL);
         if (!resource.exists()) return;
         readYamlFile(resource).forEach(group->{
             String queryName = group.getName();
@@ -66,8 +64,8 @@ public class GlobalTypeYaml extends AbstractYamlType {
     // TODO TO BE DELETED; work with FE to adjust GraphQL Scheme
     private void checkEmptySearch(Map<String, Object> result, QueryParam param) {
         for (Map.Entry<String, Object> entry : result.entrySet()) {
-            if (param.getSearchText().equals("")) {
-                Object obj = entry.getKey().contains("count") ? 0 : new ArrayList<>();
+            if (entry.getKey().contains("count")) {
+                Object obj = param.getSearchText().equals("") ? 0 : entry.getValue();
                 result.put(entry.getKey(), obj);
             }
         }
