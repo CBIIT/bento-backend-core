@@ -25,17 +25,18 @@ import java.util.Map;
 public class SingleTypeYaml extends AbstractYamlType {
 
     private final ESService esService;
+    private final Const.ES_ACCESS_TYPE accessType;
     private static final Logger logger = LogManager.getLogger(SingleTypeYaml.class);
 
     private List<YamlQuery> readYamlFile(ClassPathResource resource) throws IOException {
-        logger.info("Yaml single file query loading...");
+        logger.info(String.format("%s Yaml single file query loading...", accessType.toString()));
         Yaml yaml = new Yaml(new Constructor(SingleTypeQuery.class));
         SingleTypeQuery singleTypeQuery = yaml.load(resource.getInputStream());
         return singleTypeQuery.getQueries();
     }
 
     private Object multipleSend(YamlQuery query, QueryParam param, ITypeQuery iTypeQuery, IFilterType iFilterType) throws IOException {
-        logger.info("Single yaml search API requested: " + query.getName());
+        logger.info(String.format("%s single Yaml search API requested: %s", accessType.toString(), query.getName()));
         Map<String, QueryResult> multipleSendResult = esService.elasticMultiSend(
                 List.of(MultipleRequests.builder()
                         .name(query.getName())
@@ -48,7 +49,8 @@ public class SingleTypeYaml extends AbstractYamlType {
 
     @Override
     public void createSearchQuery(Map<String, DataFetcher> resultMap, ITypeQuery iTypeQuery, IFilterType iFilterType) throws IOException {
-        ClassPathResource resource = new ClassPathResource(Const.YAML_QUERY.FILE_NAMES_BENTO.SINGLE);
+        String fileName = Const.YAML_QUERY.SUB_FOLDER + getYamlFileName(accessType, Const.YAML_QUERY.FILE_NAMES_BENTO.SINGLE);
+        ClassPathResource resource = new ClassPathResource(fileName);
         if (!resource.exists()) return;
         readYamlFile(resource).forEach(query->
                 resultMap.put(query.getName(), env -> multipleSend(query, createQueryParam(env), iTypeQuery, iFilterType))
