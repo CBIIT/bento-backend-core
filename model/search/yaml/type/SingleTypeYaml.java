@@ -26,7 +26,7 @@ public class SingleTypeYaml extends AbstractYamlType {
 
     private final ESService esService;
     private static final Logger logger = LogManager.getLogger(SingleTypeYaml.class);
-
+    private final Const.ES_ACCESS_TYPE accessType;
     private List<YamlQuery> readYamlFile(ClassPathResource resource) throws IOException {
         logger.info("Yaml single file query loading...");
         Yaml yaml = new Yaml(new Constructor(SingleTypeQuery.class));
@@ -48,7 +48,8 @@ public class SingleTypeYaml extends AbstractYamlType {
 
     @Override
     public void createSearchQuery(Map<String, DataFetcher> resultMap, ITypeQuery iTypeQuery, IFilterType iFilterType) throws IOException {
-        ClassPathResource resource = new ClassPathResource(Const.YAML_QUERY.FILE_NAMES_BENTO.SINGLE);
+        String fileName = Const.YAML_QUERY.SUB_FOLDER + getYamlFileName(accessType, Const.YAML_QUERY.FILE_NAMES_BENTO.SINGLE);
+        ClassPathResource resource = new ClassPathResource(fileName);
         if (!resource.exists()) return;
         readYamlFile(resource).forEach(query->
                 resultMap.put(query.getName(), env -> multipleSend(query, createQueryParam(env), iTypeQuery, iFilterType))

@@ -25,7 +25,7 @@ public class GroupTypeYaml extends AbstractYamlType {
     private static final Logger logger = LogManager.getLogger(GroupTypeYaml.class);
 
     private final ESService esService;
-
+    private final Const.ES_ACCESS_TYPE accessType;
     private List<GroupTypeQuery.Group> readYamlFile(ClassPathResource resource) throws IOException {
         logger.info("Yaml group file query loading...");
         Yaml groupYaml = new Yaml(new Constructor(GroupTypeQuery.class));
@@ -48,7 +48,8 @@ public class GroupTypeYaml extends AbstractYamlType {
 
     @Override
     public void createSearchQuery(Map<String, DataFetcher> resultMap, ITypeQuery iTypeQuery, IFilterType iFilterType) throws IOException {
-        ClassPathResource resource = new ClassPathResource(Const.YAML_QUERY.FILE_NAMES_BENTO.GROUP);
+        String fileName = Const.YAML_QUERY.SUB_FOLDER + getYamlFileName(accessType, Const.YAML_QUERY.FILE_NAMES_BENTO.GROUP);
+        ClassPathResource resource = new ClassPathResource(fileName);
         if (!resource.exists()) return;
         readYamlFile(resource).forEach(group->{
             String queryName = group.getName();
