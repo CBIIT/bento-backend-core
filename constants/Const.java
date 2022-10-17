@@ -30,10 +30,6 @@ public class Const {
             public static final String SINGLE = "single_search_es.yml";
             public static final String GROUP = "facet_search_es.yml";
             public static final String GLOBAL = "global_search_es.yml";
-
-
-
-
         }
 
         public static class FILTER {
@@ -110,4 +106,5 @@ public class Const {
     }
 
     public enum ES_ACCESS_TYPE { PRIVATE, PUBLIC }
+
 }

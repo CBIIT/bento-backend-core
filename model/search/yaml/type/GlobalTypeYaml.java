@@ -67,8 +67,8 @@ public class GlobalTypeYaml extends AbstractYamlType {
     private void checkEmptySearch(Map<String, Object> result, QueryParam param) {
         for (Map.Entry<String, Object> entry : result.entrySet()) {
             if (param.getSearchText().equals("")) {
-                Object value = entry.getKey().contains("count") ? 0 : new ArrayList<>();
-                result.put(entry.getKey(), value);
+                Object obj = entry.getKey().contains("count") ? 0 : new ArrayList<>();
+                result.put(entry.getKey(), obj);
             }
         }
     }
