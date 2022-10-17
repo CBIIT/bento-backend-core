@@ -24,10 +24,11 @@ public class Const {
     }
 
     public static class YAML_QUERY {
+        public static final String SUB_FOLDER = "yaml/";
         public static class FILE_NAMES_BENTO {
-            public static final String SINGLE = "yaml/single_search_es.yml";
-            public static final String GROUP = "yaml/facet_search_es.yml";
-            public static final String GLOBAL = "yaml/global_search_es.yml";
+            public static final String SINGLE = "single_search_es.yml";
+            public static final String GROUP = "facet_search_es.yml";
+            public static final String GLOBAL = "global_search_es.yml";
 
 
 
@@ -107,4 +108,5 @@ public class Const {
         public static final String SUBJECTS = "subjects";
     }
 
+    public enum ES_ACCESS_TYPE { PRIVATE, PUBLIC }
 }
