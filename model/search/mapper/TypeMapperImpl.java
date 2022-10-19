@@ -45,10 +45,11 @@ public class TypeMapperImpl implements TypeMapperService {
             ParsedMax max = (ParsedMax) responseMap.get("max");
             ParsedMin min = (ParsedMin) responseMap.get("min");
 
-            result.put(Const.YAML_QUERY.RESULT_TYPE.RANGE_PARAMS.LOWER_BOUND, (float) min.getValue());
-            result.put(Const.YAML_QUERY.RESULT_TYPE.RANGE_PARAMS.UPPER_BOUND, (float) max.getValue());
+            long total = response.getHits().getTotalHits().value;
+            result.put(Const.YAML_QUERY.RESULT_TYPE.RANGE_PARAMS.LOWER_BOUND, total > 0 ? (float) min.getValue() : 0);
+            result.put(Const.YAML_QUERY.RESULT_TYPE.RANGE_PARAMS.UPPER_BOUND, total > 0 ? (float) max.getValue() : 0);
             // TODO this is only for bento
-            result.put("subjects", response.getHits().getTotalHits().value);
+            result.put("subjects", total);
             return result;
         };
     }
