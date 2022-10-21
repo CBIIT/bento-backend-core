@@ -2,6 +2,7 @@ package gov.nih.nci.bento.model.search.query;
 
 import gov.nih.nci.bento.constants.Const;
 import gov.nih.nci.bento.model.search.filter.FilterParam;
+import graphql.schema.GraphQLFieldDefinition;
 import org.opensearch.index.query.BoolQueryBuilder;
 import org.opensearch.index.query.QueryBuilder;
 import org.opensearch.index.query.QueryBuilders;
@@ -26,7 +27,8 @@ public class QueryFactory {
         for (Map.Entry<String, Object> entry : args.entrySet()) {
             String key = entry.getKey();
             @SuppressWarnings("unchecked")
-            List<String> list = (List<String>) args.get(key);
+            // TODO Work with FE to change parameter to array
+            List<String> list = args.get(key) instanceof String ? List.of((String) args.get(key)) : (List<String>) args.get(key);
             if (list.size() > 0) {
                 // add range filter
                 if (filterParam.getRangeFilterFields().contains(key)) {
@@ -38,7 +40,7 @@ public class QueryFactory {
                     boolBuilder.filter(getCaseInsensitiveQuery(list, key));
                     continue;
                 }
-                boolBuilder.filter(QueryBuilders.termsQuery(key, (List<String>) args.get(key)));
+                boolBuilder.filter(QueryBuilders.termsQuery(key, list));
             }
         }
         return boolBuilder.filter().size() > 0 ? boolBuilder : QueryBuilders.matchAllQuery();
