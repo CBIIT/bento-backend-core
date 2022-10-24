@@ -64,7 +64,7 @@ public class FilterParam {
         public Pagination(Map<String, Object> args, String defaultSortField, Map<String, String> alternativeSortField,
                           Set<String> returnFields) {
             this.args = args;
-            this.returnFields = returnFields;
+            this.returnFields = returnFields != null ? returnFields : new HashSet<>();
             this.defaultSortField = defaultSortField;
             this.offSet = getPageOffSet();
             this.pageSize = getSize();
