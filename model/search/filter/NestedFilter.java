@@ -56,7 +56,7 @@ public class NestedFilter extends AbstractFilter {
     }
 
     private void removeFilterField(FilterParam filterParam, Set<String> nestedParameters) {
-        if (filterParam.isExcludeFilter() && nestedParameters.contains(filterParam.getSelectedField())) {
+        if (filterParam.isIgnoreSelectedField() && nestedParameters.contains(filterParam.getSelectedField())) {
             nestedParameters.remove(filterParam.getSelectedField());
         }
     }

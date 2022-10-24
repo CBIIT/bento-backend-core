@@ -18,11 +18,9 @@ public class FilterParam {
     private final boolean caseInsensitive;
     private final Set<String> rangeFilterFields;
     private final Pagination pagination;
-    private final boolean isExcludeFilter;
-    private boolean ignoreSelectedField;
+    private final boolean isIgnoreSelectedField;
     private final String subAggSelectedField;
     private final String nestedPath;
-    // TODO check
     private final boolean isRangeFilter;
     private final Set<String> nestedParameters;
     private final String searchText;
@@ -30,8 +28,8 @@ public class FilterParam {
     @Builder
     public FilterParam(Map<String, Object> args, String selectedField, Set<String> ignoreIfEmpty,
                        boolean caseInsensitive, String defaultSortField, Map<String, String> alternativeSortField,
-                       boolean isExcludeFilter,boolean ignoreSelectedField,String subAggSelectedField,
-                       boolean isRangeFilter,
+                       boolean isIgnoreSelectedField,String subAggSelectedField,
+                       boolean isRangeFilter, Set<String> returnFields,
                        Set<String> rangeFilterFields, Set<String> nestedParameters, String nestedPath) {
         this.args = args;
         this.selectedField = selectedField;
@@ -40,12 +38,12 @@ public class FilterParam {
         this.subAggSelectedField = subAggSelectedField;
         this.rangeFilterFields = rangeFilterFields == null ? new HashSet<>() : rangeFilterFields;
         this.nestedParameters = nestedParameters != null ? nestedParameters : new HashSet<>();
-        this.ignoreSelectedField = ignoreSelectedField;
         this.nestedPath = nestedPath;
-        this.isExcludeFilter = isExcludeFilter;
+        this.isIgnoreSelectedField = isIgnoreSelectedField;
         this.isRangeFilter = isRangeFilter;
         this.pagination = new Pagination.PaginationBuilder()
                 .args(args)
+                .returnFields(returnFields)
                 .alternativeSortField(alternativeSortField)
                 .defaultSortField(defaultSortField).build();
         this.searchText = args.containsKey(Const.ES_PARAMS.INPUT) ?  (String) args.get(Const.ES_PARAMS.INPUT) : "";
@@ -60,10 +58,13 @@ public class FilterParam {
         private final String orderBy;
         private final String defaultSortField;
         private final String pageOrderBy;
+        private final Set<String> returnFields;
 
         @Builder
-        public Pagination(Map<String, Object> args, String defaultSortField, Map<String, String> alternativeSortField) {
+        public Pagination(Map<String, Object> args, String defaultSortField, Map<String, String> alternativeSortField,
+                          Set<String> returnFields) {
             this.args = args;
+            this.returnFields = returnFields;
             this.defaultSortField = defaultSortField;
             this.offSet = getPageOffSet();
             this.pageSize = getSize();
@@ -83,6 +84,7 @@ public class FilterParam {
 
         private String getOrderByText() {
             String orderBy = args.containsKey(Const.ES_PARAMS.ORDER_BY) ? (String) args.get(Const.ES_PARAMS.ORDER_BY) : "";
+            if (!returnFields.contains(orderBy)) orderBy = "";
             return orderBy.equals("") ? defaultSortField : orderBy;
         }
 
