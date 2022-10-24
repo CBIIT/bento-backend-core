@@ -103,12 +103,13 @@ public class YamlQueryFactory {
                             .ignoreIfEmpty(filterType.getIgnoreIfEmpty())
                             .rangeFilterFields(filterType.getRangeFilterFields())
                             .alternativeSortField(filterType.getAlternativeSortField())
+                            .returnFields(param.getReturnTypes())
                             .build()).getSourceFilter();
                 case Const.YAML_QUERY.FILTER.AGGREGATION:
                     return new AggregationFilter(
                             FilterParam.builder()
                                     .args(param.getArgs())
-                                    .isExcludeFilter(filterType.isIgnoreSelectedField())
+                                    .isIgnoreSelectedField(filterType.isIgnoreSelectedField())
                                     .selectedField(filterType.getSelectedField())
                                     .build())
                             .getSourceFilter();
@@ -132,7 +133,7 @@ public class YamlQueryFactory {
                     return new NestedFilter(
                             FilterParam.builder()
                                     .args(param.getArgs())
-                                    .isExcludeFilter(filterType.isIgnoreSelectedField())
+                                    .isIgnoreSelectedField(filterType.isIgnoreSelectedField())
                                     .selectedField(filterType.getSelectedField())
                                     .nestedPath(filterType.getNestedPath())
                                     .nestedParameters(filterType.getNestedParameters())
@@ -141,7 +142,7 @@ public class YamlQueryFactory {
                 case Const.YAML_QUERY.FILTER.GLOBAL:
                     return new GlobalQueryFilter(FilterParam.builder()
                             .args(param.getArgs())
-                            .isExcludeFilter(filterType.isIgnoreSelectedField())
+                            .isIgnoreSelectedField(filterType.isIgnoreSelectedField())
                             .selectedField(filterType.getSelectedField())
                             .nestedPath(filterType.getNestedPath())
                             .nestedParameters(filterType.getNestedParameters())

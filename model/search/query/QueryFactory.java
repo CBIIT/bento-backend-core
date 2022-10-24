@@ -2,13 +2,15 @@ package gov.nih.nci.bento.model.search.query;
 
 import gov.nih.nci.bento.constants.Const;
 import gov.nih.nci.bento.model.search.filter.FilterParam;
-import graphql.schema.GraphQLFieldDefinition;
 import org.opensearch.index.query.BoolQueryBuilder;
 import org.opensearch.index.query.QueryBuilder;
 import org.opensearch.index.query.QueryBuilders;
 import org.opensearch.index.query.RangeQueryBuilder;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class QueryFactory {
     private FilterParam filterParam;
@@ -55,7 +57,7 @@ public class QueryFactory {
 
     private void removeCustomParams(Map<String, Object> args) {
         // remove range filter parameter(max / min)
-        if (filterParam.isExcludeFilter() || filterParam.isRangeFilter()) {
+        if (filterParam.isIgnoreSelectedField() || filterParam.isRangeFilter()) {
             String key = filterParam.getSelectedField();
             if (args.containsKey(key)) args.remove(key);
         }
