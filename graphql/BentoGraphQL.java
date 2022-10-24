@@ -2,8 +2,6 @@ package gov.nih.nci.bento.graphql;
 
 import gov.nih.nci.bento.model.AbstractESDataFetcher;
 import gov.nih.nci.bento.model.AbstractNeo4jDataFetcher;
-import gov.nih.nci.bento.model.AbstractPrivateESDataFetcher;
-import gov.nih.nci.bento.model.AbstractPublicESDataFetcher;
 import gov.nih.nci.bento.model.ConfigurationDAO;
 import gov.nih.nci.bento.model.PrivateNeo4jDataFetcher;
 import gov.nih.nci.bento.model.PublicNeo4jDataFetcher;
@@ -40,8 +38,8 @@ public class BentoGraphQL {
     public BentoGraphQL(
             ConfigurationDAO config,
             RedisService redisService,
-            AbstractPrivateESDataFetcher privateESDataFetcher,
-            AbstractPublicESDataFetcher publicESDataFetcher
+            AbstractESDataFetcher privateESDataFetcher,
+            AbstractESDataFetcher publicESDataFetcher
     ) throws IOException {
         PublicNeo4jDataFetcher publicNeo4JDataFetcher = new PublicNeo4jDataFetcher(config, redisService);
         PrivateNeo4jDataFetcher privateNeo4jDataFetcher = new PrivateNeo4jDataFetcher(config, redisService);
