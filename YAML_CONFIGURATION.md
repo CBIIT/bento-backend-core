@@ -19,7 +19,6 @@ The following files must be added for the Yaml configuration.
 ## 1. Open-search Yaml scheme in Data-Loader
 This is to explain for an Open-search data schema exporting Neo4j data into Open-search
 
-### Open-Search Schema Description
 | Name         | Description                                                                                                                                                                                                                                                                                                                                      |
 |--------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | index_name   | Declare a name of index in Open-search                                                                                                                                                                                                                                                                                                           |
