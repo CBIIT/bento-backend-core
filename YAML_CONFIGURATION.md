@@ -4,8 +4,9 @@ This is the user documentation to build a codeless search API written in YAML re
 ## Introduction
 The codeless Yaml configuration is a tool to implement Open-search APIs without writing Java code in Bento Backend.
 
-
+## TODO write detailed description of pre-requisite prior to YAML Configuration Guide
 ## Pre-requisite
+## TODO write detailed instruction for the connection between cypher_query and Yaml properties
 Open-search Yaml scheme in Data-Loader
 This is to explain for an Open-search data schema exporting Neo4j data into Open-search
 
@@ -22,11 +23,12 @@ The following files must be added for the Yaml configuration.
 
 Search API YAML Script in Bento-Backend
 
-| File Type | Description                                    |
-|-----------|------------------------------------------------|
-| Single    | Request a single query                         |
-| Facet     | Request multiple queries at a time             |
-| Global    | Request a pre-determined global search queries |
+| File Type            | Description                                    |
+|----------------------|------------------------------------------------|
+| single_search_es.yml | Request a single query                         |
+| facet_search_es.yml  | Request multiple queries at a time             |
+| global_search_es.yml | Request a pre-determined global search queries |
+
 
 ## Search API YAML Script in Bento-Backend
   - index: Declare Open-search index name(s)
@@ -36,26 +38,27 @@ Search API YAML Script in Bento-Backend
   
 
 ## Filter Type Table - FY-1.0
-| Filter Type     | Description                                                                                                                                                                                                                                                                                                                                  |
-|-----------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| default         | Search in the selectedField through Open-search index <br/> <table>  <tbody>  <tr>  <td>Name</td>  <td>Required</td>  <td>Description</td></tr> <tr> <td>selectedField</td>  <td>O</td>  <td>-</td></tr> </tbody>  </table>                                                                                                                  |
-| aggregation     | Search to group the summary of documents into buckets <br/> <table>  <tbody>  <tr>  <td>Name</td>  <td>Required</td>  <td>Description</td></tr> <tr> <td>selectedField</td>  <td>O</td>  <td>-</td></tr> <tr> <td>ignoreSelectedField</td>  <td>X</td>  <td>-</td></tr></tbody>  </table>                                                    |
-| pagination      | Search with pagination params including size, offset, and order-by <br/> <table>  <tbody>  <tr>  <td>Name</td>  <td>Required</td>  <td>Description</td></tr> <tr> <td>defaultSortField</td>  <td>X</td>  <td>-</td></tr> <tr> <td>alternativeSortField</td>  <td>X</td>  <td>-</td></tr> </tbody>  </table>                                  |
-| range           | Search within numerical boundary <br/> <table>  <tbody>  <tr>  <td>Name</td>  <td>Required</td>  <td>Description</td></tr> <tr> <td>selectedField</td>  <td>O</td>  <td>-</td></tr></tbody>  </table>                                                                                                                                        |
-| sub_aggregation | In addition to aggregation, grouping the summary of each document per bucket <br/>  <table>  <tbody>  <tr>  <td>Name</td>  <td>Required</td>  <td>Description</td></tr> <tr> <td>selectedField</td>  <td>O</td>  <td>-</td></tr><tr> <td>subAggSelectedField</td>  <td>O</td>  <td>-</td></tr> </tbody>  </table>                            |
-| global          | Search based on a precise value<br/> <table>  <tbody>  <tr>  <td>Name</td>  <td>Required</td>  <td>Description</td></tr> <tr> <td>defaultSortField</td>  <td>O</td>  <td>-</td></tr> <tr> <td>query</td>  <td>O</td>  <td>query search desc</td></tr> <tr> <td>typedSearch</td>  <td>X</td>  <td>type search des</td></tr></tbody>  </table> |
-| nested          | Searches it in a nested field objects <br/> <table>  <tbody>  <tr>  <td>Name</td>  <td>Required</td>  <td>Description</td></tr> <tr> <td>defaultSortField</td>  <td>O</td>  <td>-</td></tr> <tr> <td>nestedParameters</td>  <td>X</td>  <td>-</td></tr></tbody>  </table> <br/>                                                              |
-| sum             | Sum up numerical values from the aggregated search. <br/> <table>  <tbody>  <tr>  <td>Name</td>  <td>Required</td>  <td>Description</td></tr> <tr> <td>selectedField</td>  <td>O</td>  <td>-</td></tr> </tbody>  </table>                                                                                                                    |
+| Filter Type     | Description                                                                                                                                                                                                                                                                                                                                       |
+|-----------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| default         | Search in the selectedField through Open-search index <br/> <table>  <tbody>  <tr>  <td>Name</td>  <td>Required</td>  <td>Description</td></tr> <tr> <td>selectedField</td>  <td>Yes</td>  <td>-</td></tr> </tbody>  </table>                                                                                                                     |
+| aggregation     | Search to group the summary of documents into buckets <br/> <table>  <tbody>  <tr>  <td>Name</td>  <td>Required</td>  <td>Description</td></tr> <tr> <td>selectedField</td>  <td>Yes</td>  <td>-</td></tr> <tr> <td>ignoreSelectedField</td>  <td>No</td>  <td>-</td></tr></tbody>  </table>                                                      |
+| pagination      | Search with pagination params including size, offset, and order-by <br/> <table>  <tbody>  <tr>  <td>Name</td>  <td>Required</td>  <td>Description</td></tr> <tr> <td>defaultSortField</td>  <td>No</td>  <td>-</td></tr> <tr> <td>alternativeSortField</td>  <td>No</td>  <td>-</td></tr> </tbody>  </table>                                     |
+| range           | Search within numerical boundary <br/> <table>  <tbody>  <tr>  <td>Name</td>  <td>Required</td>  <td>Description</td></tr> <tr> <td>selectedField</td>  <td>Yes</td>  <td>-</td></tr></tbody>  </table>                                                                                                                                           |
+| sub_aggregation | In addition to aggregation, grouping the summary of each document per bucket <br/>  <table>  <tbody>  <tr>  <td>Name</td>  <td>Required</td>  <td>Description</td></tr> <tr> <td>selectedField</td>  <td>Yes</td>  <td>-</td></tr><tr> <td>subAggSelectedField</td>  <td>Yes</td>  <td>-</td></tr> </tbody>  </table>                             |
+| global          | Search based on a precise value<br/> <table>  <tbody>  <tr>  <td>Name</td>  <td>Required</td>  <td>Description</td></tr> <tr> <td>defaultSortField</td>  <td>Yes</td>  <td>-</td></tr> <tr> <td>query</td>  <td>Yes</td>  <td>query search desc</td></tr> <tr> <td>typedSearch</td>  <td>No</td>  <td>type search des</td></tr></tbody>  </table> |
+| nested          | Searches it in a nested field objects <br/> <table>  <tbody>  <tr>  <td>Name</td>  <td>Required</td>  <td>Description</td></tr> <tr> <td>defaultSortField</td>  <td>Yes</td>  <td>-</td></tr> <tr> <td>nestedParameters</td>  <td>No</td>  <td>-</td></tr></tbody>  </table> <br/>                                                                |
+| sum             | Sum up numerical values from the aggregated search. <br/> <table>  <tbody>  <tr>  <td>Name</td>  <td>Required</td>  <td>Description</td></tr> <tr> <td>selectedField</td>  <td>Yes</td>  <td>-</td></tr> </tbody>  </table>                                                                                                                       |
 
+## TODO write details about Highlighter
 ## Global Highlighter
 pre-requisite: In order to use highlight, a filter type must be stored as global
 
 | Name         | Required | Description                                                    |
 |--------------|----------|----------------------------------------------------------------|
-| fields       | O        | Array of fields to highlight                                   |
-| fragmentSize | X        | The size of the highlighted fragment. Default by 1             |
-| preTag       | X        | Use html tag to wrap before the highlighted text. Default by $ |
-| postTag      | X        | Use html tag to wrap after the highlighted text. Default by $  |
+| fields       | Yes      | Array of fields to highlight                                   |
+| fragmentSize | No       | The size of the highlighted fragment. Default by 1             |
+| preTag       | No       | Use html tag to wrap before the highlighted text. Default by $ |
+| postTag      | No       | Use html tag to wrap after the highlighted text. Default by $  |
 
 ## Query Configuration Result Type Table - RT-1.0
 | Result Type         | Optional Method                                       | Example                                                                  |
@@ -88,6 +91,7 @@ pre-requisite: In order to use highlight, a filter type must be stored as global
 | match      | Searched text, number or boolean value after text scoring analysis                          |
 | wildcard   | Searches items without knowing the exact words                                              |
 
+## TODO Come up with how to demonstrate a Yaml file
 ## Query Pairing
 A filter type must pair with a result type
 
