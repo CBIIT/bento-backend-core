@@ -4,19 +4,9 @@ This is the user documentation to build a codeless search API written in YAML re
 ## Introduction
 The codeless Yaml configuration is a tool to implement Open-search APIs without writing Java code in Bento Backend.
 
-## Required Configuration Files
-The following files must be added for the Yaml configuration.
-1. Open-search Yaml scheme in Data-Loader
-2. Search API YAML Script in Bento-Backend
 
-| File Type | Description                                    |
-|-----------|------------------------------------------------|
-| Single    | Request a single query                         |
-| Facet     | Request multiple queries at a time             |
-| Global    | Request a pre-determined global search queries |
-
-   
-## 1. Open-search Yaml scheme in Data-Loader
+## Pre-requisite
+Open-search Yaml scheme in Data-Loader
 This is to explain for an Open-search data schema exporting Neo4j data into Open-search
 
 | Name         | Description                                                                                                                                                                                                                                                                                                                                      |
@@ -26,7 +16,19 @@ This is to explain for an Open-search data schema exporting Neo4j data into Open
 | mapping      | Declare a list of fields and property values <br/> <table>  <tbody>  <tr>  <td>Name</td> <td>Description</td></tr> <tr> <td>field_name</td>  <td>Declare a name of field</td></tr> <tr> <td>properties</td>  <td>Declare a data type of the field </br> ex) keyword, integer, long, double, object, text, nested   </td></tr> </tbody>  </table> |
 | cypher_query | Neo4j graph query that lets you retrieve data. This field described in the scheme must be matched a field in cypher_query                                                                                                                                                                                                                        |
 
-## 2. Search API YAML Script in Bento-Backend
+
+## Required Configuration Files
+The following files must be added for the Yaml configuration.
+
+Search API YAML Script in Bento-Backend
+
+| File Type | Description                                    |
+|-----------|------------------------------------------------|
+| Single    | Request a single query                         |
+| Facet     | Request multiple queries at a time             |
+| Global    | Request a pre-determined global search queries |
+
+## Search API YAML Script in Bento-Backend
   - index: Declare Open-search index name(s)
   - name: Declare a GraphQL query name
   - filter: Declare a filter type in GraphQl scheme; See Table FY-1.0
