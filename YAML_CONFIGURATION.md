@@ -5,7 +5,7 @@ This is the user documentation to build a codeless search API written in YAML re
 The codeless Yaml configuration is a tool to implement Open-search APIs without writing Java code in Bento Backend.
 
 ## Required Configuration Files
-The following file must be added for the Yaml configuration.
+The following files must be added for the Yaml configuration.
 1. Open-search Yaml scheme in Data-Loader
 2. Search API YAML Script in Bento-Backend
 
@@ -20,12 +20,12 @@ The following file must be added for the Yaml configuration.
 This is to explain for an Open-search data schema exporting Neo4j data into Open-search
 
 ### Open-Search Schema Description
-| Name         | Description                                                                                                                                                                                                                                                                                                                                     |
-|--------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| index_name   | Declare a name of index in Open-search                                                                                                                                                                                                                                                                                                          |
-| type         | Declare a type of data-source where to import                                                                                                                                                                                                                                                                                                   |
-| mapping      | Declare a list of fields and property types <br/> <table>  <tbody>  <tr>  <td>Name</td> <td>Description</td></tr> <tr> <td>field_name</td>  <td>Declare a name of field</td></tr> <tr> <td>properties</td>  <td>Declare a data type of the field </br> ex) keyword, integer, long, double, object, text, nested   </td></tr> </tbody>  </table> |
-| cypher_query | Neo4j graph query that lets you retrieve data                                                                                                                                                                                                                                                                                                   |
+| Name         | Description                                                                                                                                                                                                                                                                                                                                      |
+|--------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| index_name   | Declare a name of index in Open-search                                                                                                                                                                                                                                                                                                           |
+| type         | Declare a type of data-source ex) neo4j                                                                                                                                                                                                                                                                                                          |
+| mapping      | Declare a list of fields and property values <br/> <table>  <tbody>  <tr>  <td>Name</td> <td>Description</td></tr> <tr> <td>field_name</td>  <td>Declare a name of field</td></tr> <tr> <td>properties</td>  <td>Declare a data type of the field </br> ex) keyword, integer, long, double, object, text, nested   </td></tr> </tbody>  </table> |
+| cypher_query | Neo4j graph query that lets you retrieve data. This field described in the scheme must be matched a field in cypher_query                                                                                                                                                                                                                        |
 
 ## 2. Search API YAML Script in Bento-Backend
   - index: Declare Open-search Index Name(s)
