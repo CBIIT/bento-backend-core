@@ -1,5 +1,5 @@
 # YAML Configuration Guide
-This is the user documentation to build a codeless search API written in YAML running in Open-search.
+This is the user documentation to build a codeless search API written in YAML retrieving data from Open-search.
 
 ## Introduction
 The codeless Yaml configuration is a tool to implement Open-search APIs without writing Java code in Bento Backend.
