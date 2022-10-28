@@ -28,10 +28,10 @@ This is to explain for an Open-search data schema exporting Neo4j data into Open
 | cypher_query | Neo4j graph query that lets you retrieve data. This field described in the scheme must be matched a field in cypher_query                                                                                                                                                                                                                        |
 
 ## 2. Search API YAML Script in Bento-Backend
-  - index: Declare Open-search Index Name(s)
-  - name: Declare a GraphQL Query Name
-  - filter: Declare a filter type in GraphQl scheme. See Table FY-1.0
-  - result: Declare Desired Return Type See Table RT-1.0
+  - index: Declare Open-search index name(s)
+  - name: Declare a GraphQL query name
+  - filter: Declare a filter type in GraphQl scheme; See Table FY-1.0
+  - result: Declare desired return type; See Table RT-1.0
   
 
 ## Filter Type Table - FY-1.0
