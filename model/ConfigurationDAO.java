@@ -9,10 +9,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 
 /**
- * The Configuration Bean, reads configuration setting from classpath:application.properties.
+ * The Configuration Bean, reads configuration setting from classpath:application.yaml.
  */
 @Configuration
-@PropertySource("classpath:application.properties")
+@PropertySource("classpath:application.yaml")
 @RequiredArgsConstructor
 @Getter
 public class ConfigurationDAO {
