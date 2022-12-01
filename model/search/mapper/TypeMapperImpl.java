@@ -246,10 +246,12 @@ public class TypeMapperImpl implements TypeMapperService {
                 Map<String, Object> source = hit.getSourceAsMap();
                 HighlightField highlightField = highlightFieldMap.get(field);
                 Text[] texts = highlightField.getFragments();
+                StringBuilder sb = new StringBuilder();
                 Arrays.stream(texts).forEach(text->
-                        result.add(
-                                mapper.getMap(source, text)
-                        )
+                        sb.append(text)
+                );
+                result.add(
+                        mapper.getMap(source, sb.toString())
                 );
             });
             return result;
