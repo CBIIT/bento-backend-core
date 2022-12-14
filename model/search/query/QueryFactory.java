@@ -23,6 +23,12 @@ public class QueryFactory {
     public QueryBuilder getQuery() {
         BoolQueryBuilder boolBuilder = new BoolQueryBuilder();
         Map<String, Object> args = new HashMap<>(filterParam.getArgs());
+
+        // Add Extra Filters
+        filterParam.getExtraFilters().forEach((key,value)->{
+            args.put(key,value);
+        });
+
         // remove custom params
         removeCustomParams(args);
 
