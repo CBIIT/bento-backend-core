@@ -94,6 +94,7 @@ public class YamlQueryFactory {
                     return new DefaultFilter(FilterParam.builder()
                             .args(param.getArgs())
                             .caseInsensitive(filterType.isCaseInsensitive())
+                            .extraFilters(filterType.getExtraFilters())
                             .ignoreIfEmpty(filterType.getIgnoreIfEmpty()).build())
                             .getSourceFilter();
                 case Const.YAML_QUERY.FILTER.PAGINATION:
@@ -104,6 +105,7 @@ public class YamlQueryFactory {
                             .rangeFilterFields(filterType.getRangeFilterFields())
                             .alternativeSortField(filterType.getAlternativeSortField())
                             .returnFields(param.getReturnTypes())
+                            .extraFilters(filterType.getExtraFilters())
                             .build()).getSourceFilter();
                 case Const.YAML_QUERY.FILTER.AGGREGATION:
                     return new AggregationFilter(
@@ -111,6 +113,7 @@ public class YamlQueryFactory {
                                     .args(param.getArgs())
                                     .isIgnoreSelectedField(filterType.isIgnoreSelectedField())
                                     .selectedField(filterType.getSelectedField())
+                                    .extraFilters(filterType.getExtraFilters())
                                     .build())
                             .getSourceFilter();
                 case Const.YAML_QUERY.FILTER.RANGE:
@@ -118,6 +121,7 @@ public class YamlQueryFactory {
                             FilterParam.builder()
                                     .args(param.getArgs())
                                     .selectedField(filterType.getSelectedField())
+                                    .extraFilters(filterType.getExtraFilters())
                                     .isRangeFilter(true)
                                     .build())
                             .getSourceFilter();
@@ -125,6 +129,7 @@ public class YamlQueryFactory {
                     return new SubAggregationFilter(
                             FilterParam.builder()
                                     .args(param.getArgs())
+                                    .extraFilters(filterType.getExtraFilters())
                                     .selectedField(filterType.getSelectedField())
                                     .subAggSelectedField(filterType.getSubAggSelectedField())
                                     .build())
@@ -134,6 +139,7 @@ public class YamlQueryFactory {
                             FilterParam.builder()
                                     .args(param.getArgs())
                                     .isIgnoreSelectedField(filterType.isIgnoreSelectedField())
+                                    .extraFilters(filterType.getExtraFilters())
                                     .selectedField(filterType.getSelectedField())
                                     .nestedPath(filterType.getNestedPath())
                                     .nestedParameters(filterType.getNestedParameters())
@@ -145,12 +151,14 @@ public class YamlQueryFactory {
                             .isIgnoreSelectedField(filterType.isIgnoreSelectedField())
                             .selectedField(filterType.getSelectedField())
                             .nestedPath(filterType.getNestedPath())
+                            .extraFilters(filterType.getExtraFilters())
                             .nestedParameters(filterType.getNestedParameters())
                             .build(), query).getSourceFilter();
                 case Const.YAML_QUERY.FILTER.SUM:
                     return new SumFilter(
                             FilterParam.builder()
                                     .args(param.getArgs())
+                                    .extraFilters(filterType.getExtraFilters())
                                     .selectedField(filterType.getSelectedField())
                                     .build())
                             .getSourceFilter();
