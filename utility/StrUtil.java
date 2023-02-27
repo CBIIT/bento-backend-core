@@ -20,8 +20,6 @@ public class StrUtil {
         String str = Optional.ofNullable(text).orElse("");
         Pattern pattern = Pattern.compile(strPattern);
         Matcher matcher = pattern.matcher(str);
-        String result = "";
-        if (matcher.find()) result = matcher.group(1);
-        return result;
+        return matcher.find() ? matcher.group(1) : "";
     }
 }
