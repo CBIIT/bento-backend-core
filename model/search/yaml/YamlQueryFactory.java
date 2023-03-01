@@ -95,6 +95,7 @@ public class YamlQueryFactory {
                             .args(param.getArgs())
                             .caseInsensitive(filterType.isCaseInsensitive())
                             .extraFilters(filterType.getExtraFilters())
+                            .rangeFilterFields(filterType.getRangeFilterFields())
                             .ignoreIfEmpty(filterType.getIgnoreIfEmpty()).build())
                             .getSourceFilter();
                 case Const.YAML_QUERY.FILTER.PAGINATION:
@@ -114,6 +115,7 @@ public class YamlQueryFactory {
                                     .isIgnoreSelectedField(filterType.isIgnoreSelectedField())
                                     .selectedField(filterType.getSelectedField())
                                     .extraFilters(filterType.getExtraFilters())
+                                    .rangeFilterFields(filterType.getRangeFilterFields())
                                     .build())
                             .getSourceFilter();
                 case Const.YAML_QUERY.FILTER.RANGE:
@@ -132,6 +134,7 @@ public class YamlQueryFactory {
                                     .extraFilters(filterType.getExtraFilters())
                                     .selectedField(filterType.getSelectedField())
                                     .subAggSelectedField(filterType.getSubAggSelectedField())
+                                    .rangeFilterFields(filterType.getRangeFilterFields())
                                     .build())
                             .getSourceFilter();
                 case Const.YAML_QUERY.FILTER.NESTED:
@@ -143,6 +146,7 @@ public class YamlQueryFactory {
                                     .selectedField(filterType.getSelectedField())
                                     .nestedPath(filterType.getNestedPath())
                                     .nestedParameters(filterType.getNestedParameters())
+                                    .rangeFilterFields(filterType.getRangeFilterFields())
                                     .build())
                             .getSourceFilter();
                 case Const.YAML_QUERY.FILTER.GLOBAL:
@@ -160,6 +164,7 @@ public class YamlQueryFactory {
                                     .args(param.getArgs())
                                     .extraFilters(filterType.getExtraFilters())
                                     .selectedField(filterType.getSelectedField())
+                                    .rangeFilterFields(filterType.getRangeFilterFields())
                                     .build())
                             .getSourceFilter();
                 default:
