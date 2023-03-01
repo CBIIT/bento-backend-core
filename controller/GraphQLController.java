@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import gov.nih.nci.bento.error.ApiError;
 import gov.nih.nci.bento.error.BentoGraphQLException;
 import gov.nih.nci.bento.error.BentoGraphqlError;
 import gov.nih.nci.bento.graphql.BentoGraphQL;
@@ -15,6 +14,8 @@ import graphql.GraphQL;
 import graphql.language.Document;
 import graphql.language.OperationDefinition;
 import graphql.parser.Parser;
+import lombok.Getter;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpEntity;
@@ -27,7 +28,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletResponse;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -50,55 +53,66 @@ public class GraphQLController {
 	@CrossOrigin
 	@RequestMapping(value = "/version", method = {RequestMethod.GET},
 			produces = MediaType.APPLICATION_JSON_VALUE + "; charset=utf-8")
-	public ResponseEntity<String> getVersion(HttpEntity<String> httpEntity, HttpServletResponse response){
-		logger.info("Hit end point:/version");
+	public ResponseEntity<String> getVersion(){
+		logger.info("Hit end point: /version");
 		String versionString = config.getBentoApiVersion();
 		logger.info(versionString);
 		return ResponseEntity.ok(gson.toJson(Map.of("version", versionString)));
 	}
 
 	@CrossOrigin
+	@RequestMapping(value = "/neo4j-version", method = {RequestMethod.GET},
+			produces = MediaType.APPLICATION_JSON_VALUE + "; charset=utf-8")
+	public ResponseEntity<String> getNeo4jVersion(HttpEntity<String> httpEntity){
+		logger.info("Hit end point: /neo4j-version");
+		return new Neo4jVersionQuery(httpEntity).queryDataSourceVersion();
+	}
+
+	@CrossOrigin
+	@RequestMapping(value = "/opensearch-version", method = {RequestMethod.GET},
+			produces = MediaType.APPLICATION_JSON_VALUE + "; charset=utf-8")
+	public ResponseEntity<String> getOpenSearchVersion(HttpEntity<String> httpEntity){
+		logger.info("Hit end point: /opensearch-version");
+		return new OpenSearchVersionQuery(httpEntity).queryDataSourceVersion();
+	}
+
+	@CrossOrigin
 	@RequestMapping(value = {"/v1/graphql/", "/v1/public-graphql/"}, method = {RequestMethod.GET, RequestMethod.HEAD,
 			RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.TRACE, RequestMethod.OPTIONS, RequestMethod.PATCH},
 			produces = MediaType.APPLICATION_JSON_VALUE + "; charset=utf-8")
-	public ResponseEntity<String> getPrivateGraphQLResponseByGET(HttpEntity<String> httpEntity,
-			HttpServletResponse response) {
-		HttpStatus status = HttpStatus.METHOD_NOT_ALLOWED;
-		String error = ApiError.jsonApiError(new ApiError(status, "API will only accept POST requests"));
-		return logAndReturnError(status, error);
+	public ResponseEntity<String> getPrivateGraphQLResponseByGET() {
+		return logAndReturnError(HttpStatus.METHOD_NOT_ALLOWED, "API will only accept POST requests");
 	}
 
 	@CrossOrigin
 	@RequestMapping(value = "/v1/graphql/", method = RequestMethod.POST,
 			produces = MediaType.APPLICATION_JSON_VALUE + "; charset=utf-8")
 	@ResponseBody
-	public ResponseEntity<String> getPrivateGraphQLResponse(HttpEntity<String> httpEntity,
-			HttpServletResponse response){
+	public ResponseEntity<String> getPrivateGraphQLResponse(HttpEntity<String> httpEntity){
         logger.info("hit end point:/v1/graphql/");
-        return getGraphQLResponse(httpEntity, response, bentoGraphQL.getPrivateGraphQL());
+        return getGraphQLResponse(httpEntity, bentoGraphQL.getPrivateGraphQL());
 	}
 
 	@CrossOrigin
 	@RequestMapping(value = "/v1/public-graphql/", method = RequestMethod.POST,
 			produces = MediaType.APPLICATION_JSON_VALUE + "; charset=utf-8")
 	@ResponseBody
-	public ResponseEntity<String> getPublicGraphQLResponse(HttpEntity<String> httpEntity, HttpServletResponse response){
+	public ResponseEntity<String> getPublicGraphQLResponse(HttpEntity<String> httpEntity){
         logger.info("hit end point:/v1/public-graphql/");
-		return getGraphQLResponse(httpEntity, response, bentoGraphQL.getPublicGraphQL());
+		return getGraphQLResponse(httpEntity, bentoGraphQL.getPublicGraphQL());
 	}
 
 	@ResponseBody
-	private ResponseEntity<String> getGraphQLResponse(HttpEntity<String> httpEntity, HttpServletResponse response,
-			GraphQL graphQL) {
+	private ResponseEntity<String> getGraphQLResponse(HttpEntity<String> httpEntity, GraphQL graphQL) {
 		// Get graphql query from request
-		String reqBody = httpEntity.getBody().toString();
+		String reqBody = httpEntity.getBody();
 		Gson gson = new Gson();
 		JsonObject jsonObject = gson.fromJson(reqBody, JsonObject.class);
 		String query;
 		Map<String, Object> variables;
 		String operation;
 		try{
-			query = new String(jsonObject.get("query").getAsString().getBytes(), "UTF-8");
+			query = new String(jsonObject.get("query").getAsString().getBytes(), StandardCharsets.UTF_8);
 			JsonElement rawVar = jsonObject.get("variables");
 			variables = gson.fromJson(rawVar, Map.class);
 			Parser parser = new Parser();
@@ -115,16 +129,11 @@ public class GraphQLController {
 			return ResponseEntity.ok(query(query, variables, graphQL));
 		}
 		else if(operation.equals("query") || operation.equals("mutation")){
-			HttpStatus status = HttpStatus.FORBIDDEN;
-			String error = ApiError.jsonApiError(status, "Request type has been disabled",
+			return logAndReturnError(HttpStatus.FORBIDDEN,
 					operation+" operations have been disabled in the application configuration.");
-			return logAndReturnError(status, error);
 		}
 		else {
-			HttpStatus status = HttpStatus.BAD_REQUEST;
-			String error = ApiError.jsonApiError(status, "Unknown operation in request",
-					operation+" operation type is not recognized.");
-			return logAndReturnError(status, error);
+			return logAndReturnError(HttpStatus.BAD_REQUEST, operation+" operation type is not recognized.");
 		}
 	}
 
@@ -156,5 +165,60 @@ public class GraphQLController {
 		ArrayList<String> errors = new ArrayList<>();
 		errors.add(error);
 		return logAndReturnError(status, errors);
+	}
+
+	private abstract class VersionQuery{
+
+		URI uri;
+		private HttpEntity httpEntity;
+
+		VersionQuery(String query, HttpEntity httpEntity) {
+			this.httpEntity = new HttpEntity<>(query, httpEntity.getHeaders());
+		}
+
+		ResponseEntity<String> queryDataSourceVersion(){
+			try{
+				ResponseEntity<String> responseEntity = getGraphQLResponse(httpEntity,bentoGraphQL.getPublicGraphQL());
+				JsonObject jsonResponseBody = gson.fromJson(responseEntity.getBody(), JsonObject.class);
+				if (jsonResponseBody.has("errors")){
+					jsonResponseBody.getAsJsonArray("errors").forEach(x-> logger.error(x.getAsJsonObject()
+							.getAsJsonPrimitive("message").getAsString()));
+					return responseEntity;
+				}
+				return ResponseEntity.ok(gson.toJson(Map.of("version", parseVersion(jsonResponseBody))));
+			}
+			catch (Exception e) {
+				logger.error(e);
+				return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An internal server error has " +
+						"occurred, please notify the administrators");
+			}
+		}
+
+		abstract String parseVersion(JsonObject jsonObject);
+	}
+
+	private class Neo4jVersionQuery extends VersionQuery{
+
+		Neo4jVersionQuery(HttpEntity httpEntity) {
+			super("{\"query\":\"{neo4jVersion}\",\"variables\":{}}", httpEntity);
+		}
+
+		@Override
+		public String parseVersion(JsonObject jsonObject){
+			return jsonObject.get("data").getAsJsonObject().get("neo4jVersion").getAsString();
+		}
+
+	}
+
+	private class OpenSearchVersionQuery extends VersionQuery{
+		OpenSearchVersionQuery(HttpEntity httpEntity){
+			super("{\"query\":\"{esVersion}\",\"variables\":{}}",	httpEntity);
+		}
+
+		@Override
+		public String parseVersion(JsonObject jsonResponseBody) {
+			return jsonResponseBody.getAsJsonObject("data")
+					.getAsJsonPrimitive("esVersion").getAsString();
+		}
 	}
 }

@@ -1,6 +1,12 @@
 package gov.nih.nci.bento.graphql;
 
-import gov.nih.nci.bento.model.*;
+import gov.nih.nci.bento.model.AbstractESDataFetcher;
+import gov.nih.nci.bento.model.AbstractNeo4jDataFetcher;
+import gov.nih.nci.bento.model.AbstractPrivateESDataFetcher;
+import gov.nih.nci.bento.model.AbstractPublicESDataFetcher;
+import gov.nih.nci.bento.model.ConfigurationDAO;
+import gov.nih.nci.bento.model.PrivateNeo4jDataFetcher;
+import gov.nih.nci.bento.model.PublicNeo4jDataFetcher;
 import gov.nih.nci.bento.service.RedisService;
 import graphql.GraphQL;
 import graphql.schema.GraphQLNamedType;
@@ -13,7 +19,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.neo4j.graphql.SchemaBuilder;
 import org.neo4j.graphql.SchemaConfig;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
@@ -32,11 +37,12 @@ public class BentoGraphQL {
     private final GraphQL privateGraphQL;
     private final GraphQL publicGraphQL;
 
-    public BentoGraphQL(ConfigurationDAO config,
-                        RedisService redisService,
-                        AbstractPrivateESDataFetcher privateESDataFetcher,
-                        AbstractPublicESDataFetcher publicESDataFetcher
-                        ) throws IOException {
+    public BentoGraphQL(
+            ConfigurationDAO config,
+            RedisService redisService,
+            AbstractPrivateESDataFetcher privateESDataFetcher,
+            AbstractPublicESDataFetcher publicESDataFetcher
+    ) throws IOException {
         PublicNeo4jDataFetcher publicNeo4JDataFetcher = new PublicNeo4jDataFetcher(config, redisService);
         PrivateNeo4jDataFetcher privateNeo4jDataFetcher = new PrivateNeo4jDataFetcher(config, redisService);
 
