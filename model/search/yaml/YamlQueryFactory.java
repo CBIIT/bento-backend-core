@@ -124,6 +124,7 @@ public class YamlQueryFactory {
                                     .args(param.getArgs())
                                     .selectedField(filterType.getSelectedField())
                                     .extraFilters(filterType.getExtraFilters())
+                                    .rangeFilterFields(filterType.getRangeFilterFields())
                                     .isRangeFilter(true)
                                     .build())
                             .getSourceFilter();
