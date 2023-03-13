@@ -86,4 +86,7 @@ public class ConfigurationDAO {
 	//Testing
 	@Value("${test.queries_file}")
 	private String testQueriesFile;
+	// Token secret
+	@Value("${token_secret}")
+	private String tokenSecret;
 }
