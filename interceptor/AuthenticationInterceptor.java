@@ -37,16 +37,29 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
     private final ConfigurationDAO config;
     private final TokenService tokenService;
 
+    private boolean isValidToken(String token) {
+        String accessToken = StrUtil.getToken(token);
+        return tokenService.verifyToken(accessToken);
+    }
+
     @Override
     public boolean preHandle(final HttpServletRequest request, HttpServletResponse response, final Object handler) throws IOException {
         //Verify that the request is not for the version endpoint and that request authentication is enabled
-
         if (config.isAuthEnabled() && Arrays.asList(PRIVATE_ENDPOINTS).contains(request.getServletPath())){
             HttpURLConnection con = null;
             try {
                 // Token authentication
-                String rawToken = Optional.ofNullable(request.getHeader("Authorization")).orElse("");
-                if (!rawToken.isEmpty()) return tokenService.verifyToken(StrUtil.getToken(rawToken));
+                String token = Optional.ofNullable(request.getHeader("Authorization")).orElse("");
+                if (!token.isEmpty()) {
+                    if (isValidToken(token)) return true;
+                    logAndReturnError(
+                            "This is a invalid token",
+                            HttpStatus.UNAUTHORIZED.value(),
+                            null,
+                            response
+                    );
+                    return false;
+                }
                 //Extract the cookies from the request then verify that there is at least 1 cookie
                 Cookie[] cookies = request.getCookies();
                 if (cookies != null) {
