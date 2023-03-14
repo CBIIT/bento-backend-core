@@ -4,12 +4,15 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import gov.nih.nci.bento.error.BentoGraphqlError;
 import gov.nih.nci.bento.model.ConfigurationDAO;
+import gov.nih.nci.bento.service.TokenService;
+import gov.nih.nci.bento.utility.StrUtil;
+import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import javax.servlet.http.Cookie;
@@ -22,24 +25,28 @@ import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Optional;
 
+@RequiredArgsConstructor
+@Service
 public class AuthenticationInterceptor implements HandlerInterceptor {
     private static final Logger logger = LogManager.getLogger(AuthenticationInterceptor.class);
     private static final String[] PRIVATE_ENDPOINTS = {"/v1/graphql/"};
 
     private Gson gson = new GsonBuilder().serializeNulls().create();
-
-    @Autowired
-    private ConfigurationDAO config;
+    private final ConfigurationDAO config;
+    private final TokenService tokenService;
 
     @Override
     public boolean preHandle(final HttpServletRequest request, HttpServletResponse response, final Object handler) throws IOException {
         //Verify that the request is not for the version endpoint and that request authentication is enabled
+
         if (config.isAuthEnabled() && Arrays.asList(PRIVATE_ENDPOINTS).contains(request.getServletPath())){
             HttpURLConnection con = null;
-            HashMap<String, Object> errorInfo = new HashMap<>();
             try {
+                // Token authentication
+                String rawToken = Optional.ofNullable(request.getHeader("Authorization")).orElse("");
+                if (!rawToken.isEmpty()) return tokenService.verifyToken(StrUtil.getToken(rawToken));
                 //Extract the cookies from the request then verify that there is at least 1 cookie
                 Cookie[] cookies = request.getCookies();
                 if (cookies != null) {

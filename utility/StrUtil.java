@@ -16,6 +16,12 @@ public class StrUtil {
         return getString(strPattern, text);
     }
 
+    // ex) "Bearer "ACCESS_TOKEN""
+    public static String getToken(String text) {
+        String strPattern = "(?:\\bBearer\\b)\\s{1}(.\\S{1,})";
+        return getString(strPattern, text);
+    }
+
     private static String getString(String strPattern, String text) {
         String str = Optional.ofNullable(text).orElse("");
         Pattern pattern = Pattern.compile(strPattern);

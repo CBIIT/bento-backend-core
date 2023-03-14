@@ -1,7 +1,7 @@
 package gov.nih.nci.bento;
 
 import gov.nih.nci.bento.interceptor.AuthenticationInterceptor;
-import org.springframework.context.annotation.Bean;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.CacheControl;
@@ -19,7 +19,9 @@ import java.util.concurrent.TimeUnit;
 @Configuration
 @EnableWebMvc
 @ComponentScan
+@RequiredArgsConstructor
 public class MvcWebConfig implements WebMvcConfigurer {
+	private final AuthenticationInterceptor authenticationInterceptor;
 
 	@Override
 	public void configureViewResolvers(ViewResolverRegistry registry) {
@@ -48,13 +50,8 @@ public class MvcWebConfig implements WebMvcConfigurer {
 
 	}
 
-	@Bean
-	AuthenticationInterceptor authenticationInterceptor() {
-		return new AuthenticationInterceptor();
-	}
-
 	@Override
 	public void addInterceptors(final InterceptorRegistry registry) {
-		registry.addInterceptor(authenticationInterceptor());
+		registry.addInterceptor(authenticationInterceptor);
 	}
 }
