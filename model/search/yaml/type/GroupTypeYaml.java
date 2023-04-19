@@ -17,9 +17,8 @@ import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
 @RequiredArgsConstructor
 public class GroupTypeYaml extends AbstractYamlType {
     private static final Logger logger = LogManager.getLogger(GroupTypeYaml.class);
@@ -27,10 +26,23 @@ public class GroupTypeYaml extends AbstractYamlType {
     private final ESService esService;
     private final Const.ES_ACCESS_TYPE accessType;
 
+    private void setGlobalRangeFields(GroupTypeQuery groupTypeQuery) {
+        groupTypeQuery.getQueries().stream().forEach(query->{
+            // Manual global range fields
+            Set<String> globalRangeFields = query.getGlobalRangeFields();
+            if (globalRangeFields != null && globalRangeFields.size() > 0) {
+                query.getReturnFields().stream().forEach(f->{
+                    f.getFilter().setRangeFilterFields(globalRangeFields);
+                });
+            }
+        });
+    }
+
     private List<GroupTypeQuery.Group> readYamlFile(ClassPathResource resource) throws IOException {
         logger.info(String.format("%s Yaml group file query loading...", accessType.toString()));
         Yaml groupYaml = new Yaml(new Constructor(GroupTypeQuery.class));
         GroupTypeQuery groupTypeQuery = groupYaml.load(resource.getInputStream());
+        setGlobalRangeFields(groupTypeQuery);
         return groupTypeQuery.getQueries();
     }
 
