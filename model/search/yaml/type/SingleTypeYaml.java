@@ -27,6 +27,7 @@ public class SingleTypeYaml extends AbstractYamlType {
     private final ESService esService;
     private final Const.ES_ACCESS_TYPE accessType;
     private static final Logger logger = LogManager.getLogger(SingleTypeYaml.class);
+    private static final int MAX_PARAM_VALUES = 1000;
 
     private List<YamlQuery> readYamlFile(ClassPathResource resource) throws IOException {
         logger.info(String.format("%s Yaml single file query loading...", accessType.toString()));
@@ -35,8 +36,14 @@ public class SingleTypeYaml extends AbstractYamlType {
         return singleTypeQuery.getQueries();
     }
 
-    private Object multipleSend(YamlQuery query, QueryParam param, ITypeQuery iTypeQuery, IFilterType iFilterType) throws IOException {
+    private Object multipleSend(YamlQuery query, QueryParam param, ITypeQuery iTypeQuery, IFilterType iFilterType) throws Exception {
         logger.info(String.format("%s single Yaml search API requested: %s", accessType.toString(), query.getName()));
+        Map args = param.getArgs();
+        for (Object argKey: args.keySet()){
+            if (((List) args.get(argKey)).size() > MAX_PARAM_VALUES){
+                throw new Exception(String.format("The parameter %s is required to have %d values or fewer to be accepted",argKey, MAX_PARAM_VALUES));
+            }
+        }
         Map<String, QueryResult> multipleSendResult = esService.elasticMultiSend(
                 List.of(MultipleRequests.builder()
                         .name(query.getName())
