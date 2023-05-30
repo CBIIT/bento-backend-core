@@ -118,7 +118,11 @@ public class GraphQLController {
             // Verify that all parameter inputs are less than 1000 values
 			int maxValues = 1000;
             for (String key: variables.keySet()){
-                List values = (List) variables.get(key);
+				Object valuesObject = variables.get(key);
+				if (!(valuesObject instanceof List)){
+					continue;
+				}
+                List values = (List) valuesObject;
                 int numValues = values.size();
                 if (numValues > maxValues){
                     throw new Exception(String.format("Maximum number of values exceeded for parameter %s. Provided: %d, Maximum: %d", key, numValues, maxValues));
