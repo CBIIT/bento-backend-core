@@ -115,7 +115,16 @@ public class GraphQLController {
 			query = new String(jsonObject.get("query").getAsString().getBytes(), StandardCharsets.UTF_8);
 			JsonElement rawVar = jsonObject.get("variables");
 			variables = gson.fromJson(rawVar, Map.class);
-			Parser parser = new Parser();
+            // Verify that all parameter inputs are less than 1000 values
+			int maxValues = 1000;
+            for (String key: variables.keySet()){
+                List values = (List) variables.get(key);
+                int numValues = values.size();
+                if (numValues > maxValues){
+                    throw new Exception(String.format("Maximum number of values exceeded for parameter %s. Provided: %d, Maximum: %d", key, numValues, maxValues));
+                }
+            }
+            Parser parser = new Parser();
 			Document document = parser.parseDocument(query);
 			OperationDefinition def = (OperationDefinition) document.getDefinitions().get(0);
 			operation = def.getOperation().toString().toLowerCase();
