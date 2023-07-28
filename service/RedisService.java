@@ -262,15 +262,23 @@ public class RedisService {
             int port = config.getRedisPort();
             useCluster = config.isRedisUseCluster();
             ttl = config.getRedisTTL();
-
+            Boolean redisAuthEnabled = config.isRedisAuthEnabled();
+            String redisPassword = config.getRedisPassword();
             if (host.isBlank()) {
                 return false;
             }
-
-            if (useCluster) {
-                cluster = new JedisCluster(new HostAndPort(host, port));
+            if (redisAuthEnabled) {
+                if (useCluster) {
+                    cluster = new JedisCluster(new HostAndPort(host, port), redisPassword);
+                } else {
+                    pool = new JedisPool(host, port, redisPassword);
+                }
             } else {
-                pool = new JedisPool(host, port);
+                if (useCluster) {
+                    cluster = new JedisCluster(new HostAndPort(host, port));
+                } else {
+                    pool = new JedisPool(host, port);
+                }
             }
             return true;
         } catch (JedisException e) {
