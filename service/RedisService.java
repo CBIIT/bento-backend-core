@@ -269,9 +269,13 @@ public class RedisService {
             }
             if (redisAuthEnabled) {
                 if (useCluster) {
-                    cluster = new JedisCluster(new HostAndPort(host, port), redisPassword);
+                    // JedisCluster(HostAndPort node, int connectionTimeout, int soTimeout, int maxAttempts,...
+                    // ...String password, org.apache.commons.pool2.impl.GenericObjectPoolConfig poolConfig)
+                    cluster = new JedisCluster(new HostAndPort(host, port), 2000, 2000, 5, redisPassword, new JedisPoolConfig());
                 } else {
-                    pool = new JedisPool(host, port, redisPassword);
+                    // JedisPool(org.apache.commons.pool2.impl.GenericObjectPoolConfig poolConfig, String host,...
+                    // ...int port, int timeout, String password)
+                    pool = new JedisPool(new JedisPoolConfig(), host, port, 2000, redisPassword);
                 }
             } else {
                 if (useCluster) {
