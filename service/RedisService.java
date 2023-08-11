@@ -10,6 +10,7 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisCluster;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.exceptions.JedisException;
+import redis.clients.jedis.JedisPoolConfig;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
