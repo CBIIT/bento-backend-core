@@ -268,6 +268,9 @@ public class RedisService {
             if (host.isBlank()) {
                 return false;
             }
+            if (redisAuthEnabled && redisPassword.isBlank()) {
+                return false;
+            }
             if (redisAuthEnabled) {
                 if (useCluster) {
                     cluster = new JedisCluster(new HostAndPort(host, port), 2000, 2000, 5, redisPassword, new JedisPoolConfig());
