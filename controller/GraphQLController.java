@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.internal.LinkedTreeMap;
 import gov.nih.nci.bento.error.BentoGraphQLException;
 import gov.nih.nci.bento.error.BentoGraphqlError;
 import gov.nih.nci.bento.graphql.BentoGraphQL;
@@ -32,6 +33,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -39,10 +41,18 @@ import java.util.Map;
 public class GraphQLController {
 
 	private static final Logger logger = LogManager.getLogger(GraphQLController.class);
+	private static final String QUERY = "query";
+	private static final String MUTATION = "mutation";
+	private static final String VARIABLES = "variables";
+	private static final String FIRST = "first";
+	private static final int MAX_PAGE_SIZE = 2500;
+	private static final int MAX_PARAM_SIZE = 1000;
 
 	private final ConfigurationDAO config;
 	private final Gson gson;
 	private final BentoGraphQL bentoGraphQL;
+
+
 
 	public GraphQLController(ConfigurationDAO config, BentoGraphQL bentoGraphQL){
 		this.config = config;
@@ -109,14 +119,29 @@ public class GraphQLController {
 		Gson gson = new Gson();
 		JsonObject jsonObject = gson.fromJson(reqBody, JsonObject.class);
 		String query;
-		Map<String, Object> variables;
+		HashMap<String, Object> variables;
 		String operation;
 		try{
-			query = new String(jsonObject.get("query").getAsString().getBytes(), StandardCharsets.UTF_8);
-			JsonElement rawVar = jsonObject.get("variables");
-			variables = gson.fromJson(rawVar, Map.class);
-            // Verify that all parameter inputs are less than 1000 values
-			int maxValues = 1000;
+			query = new String(jsonObject.get(QUERY).getAsString().getBytes(), StandardCharsets.UTF_8);
+			JsonElement rawVar = jsonObject.get(VARIABLES);
+			variables = gson.fromJson(rawVar, HashMap.class);
+			if (variables == null){
+				variables = new HashMap<>();
+			}
+			if (!variables.containsKey(FIRST)){
+				variables.put(FIRST, MAX_PAGE_SIZE);
+			}
+			else{
+				try {
+					int first = ((Double) variables.get(FIRST)).intValue();
+					if (first > MAX_PAGE_SIZE) {
+						throw new Exception(String.format("The requested number of results is too large. Please either update the variable '%s' to be less than or equal to %s or remove it to default to %s", FIRST, MAX_PAGE_SIZE, MAX_PAGE_SIZE));
+					}
+				}
+				catch (NumberFormatException|ClassCastException ex){
+					throw new Exception(String.format("The variable '%s' must be an integer", FIRST));
+				}
+			}
             for (String key: variables.keySet()){
 				Object valuesObject = variables.get(key);
 				if (!(valuesObject instanceof List)){
@@ -124,8 +149,8 @@ public class GraphQLController {
 				}
                 List values = (List) valuesObject;
                 int numValues = values.size();
-                if (numValues > maxValues){
-                    throw new Exception(String.format("Maximum number of values exceeded for parameter %s. Provided: %d, Maximum: %d", key, numValues, maxValues));
+                if (numValues > MAX_PARAM_SIZE){
+                    throw new Exception(String.format("Maximum number of values exceeded for parameter %s. Provided: %d, Maximum: %d", key, numValues, MAX_PARAM_SIZE));
                 }
             }
             Parser parser = new Parser();
