@@ -22,7 +22,6 @@ public class YamlFilter {
     private Map<String, String> alternativeSortField;
     private Set<String> ignoreIfEmpty = new HashSet<>();
     private Set<String> rangeFilterFields;
-    private Map<String, List<String>> extraFilters;
 
     // Global Query Sets
     private List<YamlGlobalFilterType.GlobalQuerySet> searches;

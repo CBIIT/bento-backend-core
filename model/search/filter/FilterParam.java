@@ -5,7 +5,9 @@ import lombok.Builder;
 import lombok.Getter;
 import org.opensearch.search.sort.SortOrder;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 @Getter
 public class FilterParam {
@@ -22,15 +24,13 @@ public class FilterParam {
     private final boolean isRangeFilter;
     private final Set<String> nestedParameters;
     private final String searchText;
-    private final Map<String, List<String>> extraFilters;
 
     @Builder
     public FilterParam(Map<String, Object> args, String selectedField, Set<String> ignoreIfEmpty,
                        boolean caseInsensitive, String defaultSortField, Map<String, String> alternativeSortField,
                        boolean isIgnoreSelectedField,String subAggSelectedField,
                        boolean isRangeFilter, Set<String> returnFields,
-                       Set<String> rangeFilterFields, Set<String> nestedParameters, String nestedPath,
-                       Map<String, List<String>> extraFilters) {
+                       Set<String> rangeFilterFields, Set<String> nestedParameters, String nestedPath) {
         this.args = args;
         this.selectedField = selectedField;
         this.ignoreIfEmpty = ignoreIfEmpty;
@@ -47,7 +47,6 @@ public class FilterParam {
                 .alternativeSortField(alternativeSortField)
                 .defaultSortField(defaultSortField).build();
         this.searchText = args.containsKey(Const.ES_PARAMS.INPUT) ?  (String) args.get(Const.ES_PARAMS.INPUT) : "";
-        this.extraFilters = extraFilters != null ? extraFilters : new HashMap<>();
     }
 
     @Getter
