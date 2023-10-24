@@ -65,6 +65,10 @@ public class ConfigurationDAO {
 	private int redisPort;
 	@Value("${redis.ttl}")
 	private int redisTTL;
+	@Value("${redis.authentication.enabled}")
+	private boolean redisAuthEnabled;
+	@Value("${redis.password}")
+	private String redisPassword;
 
 	//Elasticsearch Configuration
 	@Value("${es.host}")

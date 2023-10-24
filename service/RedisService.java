@@ -10,6 +10,7 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisCluster;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.exceptions.JedisException;
+import redis.clients.jedis.JedisPoolConfig;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -262,15 +263,26 @@ public class RedisService {
             int port = config.getRedisPort();
             useCluster = config.isRedisUseCluster();
             ttl = config.getRedisTTL();
-
+            Boolean redisAuthEnabled = config.isRedisAuthEnabled();
+            String redisPassword = config.getRedisPassword();
             if (host.isBlank()) {
                 return false;
             }
-
-            if (useCluster) {
-                cluster = new JedisCluster(new HostAndPort(host, port));
+            if (redisAuthEnabled && redisPassword.isBlank()) {
+                return false;
+            }
+            if (redisAuthEnabled) {
+                if (useCluster) {
+                    cluster = new JedisCluster(new HostAndPort(host, port), 2000, 2000, 5, redisPassword, new JedisPoolConfig());
+                } else {
+                    pool = new JedisPool(new JedisPoolConfig(), host, port, 2000, redisPassword);
+                }
             } else {
-                pool = new JedisPool(host, port);
+                if (useCluster) {
+                    cluster = new JedisCluster(new HostAndPort(host, port));
+                } else {
+                    pool = new JedisPool(host, port);
+                }
             }
             return true;
         } catch (JedisException e) {
