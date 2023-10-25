@@ -128,20 +128,6 @@ public class GraphQLController {
 			if (variables == null){
 				variables = new HashMap<>();
 			}
-			if (!variables.containsKey(FIRST)){
-				variables.put(FIRST, MAX_PAGE_SIZE);
-			}
-			else{
-				try {
-					int first = ((Double) variables.get(FIRST)).intValue();
-					if (first > MAX_PAGE_SIZE) {
-						throw new Exception(String.format("The requested number of results is too large. Please either update the variable '%s' to be less than or equal to %s or remove it to default to %s", FIRST, MAX_PAGE_SIZE, MAX_PAGE_SIZE));
-					}
-				}
-				catch (NumberFormatException|ClassCastException ex){
-					throw new Exception(String.format("The variable '%s' must be an integer", FIRST));
-				}
-			}
             for (String key: variables.keySet()){
 				Object valuesObject = variables.get(key);
 				if (!(valuesObject instanceof List)){
