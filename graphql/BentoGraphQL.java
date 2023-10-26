@@ -68,7 +68,7 @@ public class BentoGraphQL {
 
     private GraphQL buildGraphQL(String neo4jSchemaFile, AbstractNeo4jDataFetcher neo4jDataFetcher) throws IOException {
         GraphQLSchema neo4jSchema = getNeo4jSchema(neo4jSchemaFile, neo4jDataFetcher);
-        return GraphQL.newGraphQL(neo4jSchema).build();
+        return GraphQL.newGraphQL(neo4jSchema).instrumentation(new PageSizeLimitInstrumentation(2500)).build();
     }
 
     private GraphQL buildGraphQLWithES(String neo4jSchemaFile, String esSchemaFile,
