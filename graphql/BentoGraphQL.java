@@ -15,6 +15,7 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.SchemaGenerator;
 import graphql.schema.idl.SchemaParser;
 import graphql.schema.idl.TypeDefinitionRegistry;
+import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.neo4j.graphql.SchemaBuilder;
@@ -34,15 +35,20 @@ public class BentoGraphQL {
 
     private static final Logger logger = LogManager.getLogger(BentoGraphQL.class);
 
+    @Getter
     private final GraphQL privateGraphQL;
+    @Getter
     private final GraphQL publicGraphQL;
+
+    private final PageSizeLimitInstrumentation pageSizeLimitInstrumentation;
 
     public BentoGraphQL(
             ConfigurationDAO config,
             RedisService redisService,
             AbstractPrivateESDataFetcher privateESDataFetcher,
-            AbstractPublicESDataFetcher publicESDataFetcher
-    ) throws IOException {
+            AbstractPublicESDataFetcher publicESDataFetcher,
+            PageSizeLimitInstrumentation pageSizeLimitInstrumentation) throws IOException {
+        this.pageSizeLimitInstrumentation = pageSizeLimitInstrumentation;
         PublicNeo4jDataFetcher publicNeo4JDataFetcher = new PublicNeo4jDataFetcher(config, redisService);
         PrivateNeo4jDataFetcher privateNeo4jDataFetcher = new PrivateNeo4jDataFetcher(config, redisService);
 
@@ -58,17 +64,9 @@ public class BentoGraphQL {
         }
     }
 
-    public GraphQL getPublicGraphQL() {
-        return publicGraphQL;
-    }
-
-    public GraphQL getPrivateGraphQL() {
-        return privateGraphQL;
-    }
-
     private GraphQL buildGraphQL(String neo4jSchemaFile, AbstractNeo4jDataFetcher neo4jDataFetcher) throws IOException {
         GraphQLSchema neo4jSchema = getNeo4jSchema(neo4jSchemaFile, neo4jDataFetcher);
-        return GraphQL.newGraphQL(neo4jSchema).instrumentation(new PageSizeLimitInstrumentation(2500)).build();
+        return GraphQL.newGraphQL(neo4jSchema).instrumentation(this.pageSizeLimitInstrumentation).build();
     }
 
     private GraphQL buildGraphQLWithES(String neo4jSchemaFile, String esSchemaFile,
@@ -76,7 +74,7 @@ public class BentoGraphQL {
         GraphQLSchema neo4jSchema = getNeo4jSchema(neo4jSchemaFile, privateNeo4JDataFetcher);
         GraphQLSchema esSchema = getEsSchema(esSchemaFile, esBentoDataFetcher);
         GraphQLSchema mergedSchema = mergeSchema(neo4jSchema, esSchema);
-        return GraphQL.newGraphQL(mergedSchema).build();
+        return GraphQL.newGraphQL(mergedSchema).instrumentation(this.pageSizeLimitInstrumentation).build();
     }
 
     private GraphQLSchema getNeo4jSchema(String schema, AbstractNeo4jDataFetcher dataFetcher) throws IOException {
