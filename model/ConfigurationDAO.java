@@ -86,4 +86,8 @@ public class ConfigurationDAO {
 	//Testing
 	@Value("${test.queries_file}")
 	private String testQueriesFile;
+
+	//Query Limits
+	@Value("${validations.max_page_size:10000}")
+	private int maxPageSize;
 }
