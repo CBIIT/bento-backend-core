@@ -50,7 +50,7 @@ class PageSizeLimitInstrumentation extends SimpleInstrumentation {
                         }
                     }
                     catch (ClassCastException e){
-                        logger.error("A class cast exception was thrown while checking page size limits, the limit will not be checked for this query");
+                        //No action required, the graphql library will handle this error and report it to the user
                     }
                 });
                 if (t != null){
@@ -66,24 +66,30 @@ class PageSizeLimitInstrumentation extends SimpleInstrumentation {
 
     private ArrayList<String> getFirstVariableAliases(InstrumentationValidationParameters parameters){
         ArrayList<String> firstAliases = new ArrayList<>();
-        parameters.getDocument().getDefinitions().forEach(definition -> {
-            OperationDefinition operationDefinition = (OperationDefinition) definition;
-            operationDefinition.getSelectionSet().getSelections().forEach((selection) -> {
-                Field field = (Field) selection;
-                field.getArguments().forEach((arg) -> {
-                    String argName = arg.getName();
-                    try{
-                        if (argName.equals("first")) {
-                            VariableReference variableReference = (VariableReference) arg.getValue();
-                            firstAliases.add(variableReference.getName());
+        try{
+            parameters.getDocument().getDefinitions().forEach(definition -> {
+                OperationDefinition operationDefinition = (OperationDefinition) definition;
+                operationDefinition.getSelectionSet().getSelections().forEach((selection) -> {
+                    Field field = (Field) selection;
+                    field.getArguments().forEach((arg) -> {
+                        String argName = arg.getName();
+                        try{
+                            if (argName.equals("first")) {
+                                VariableReference variableReference = (VariableReference) arg.getValue();
+                                firstAliases.add(variableReference.getName());
+                            }
                         }
-                    }
-                    catch (ClassCastException e){
-                        logger.warn(String.format("A class cast exception was thrown while checking page size limits for variable %s", argName));
-                    }
+                        catch (ClassCastException e){
+                            logger.warn(String.format("A class cast exception was thrown while checking page size limits for variable %s", argName));
+                        }
+                    });
                 });
             });
-        });
+        }
+        catch (Exception e){
+            logger.error("An exception was thrown while checking page size limits, the limit will not be checked for this query");
+            logger.error(e.getMessage());
+        }
         return firstAliases;
     }
 }
