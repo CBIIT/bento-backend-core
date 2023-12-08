@@ -145,7 +145,8 @@ public class GraphQLController {
 			operation = def.getOperation().toString().toLowerCase();
 		}
 		catch(Exception e){
-			return logAndReturnError(HttpStatus.BAD_REQUEST, e.getMessage());
+			logger.error(e.getMessage());
+			return logAndReturnError(HttpStatus.BAD_REQUEST, "An error occurred while attempting to parse the GraphQL query.");
 		}
 
 		if ((operation.equals("query") && config.isAllowGraphQLQuery())
