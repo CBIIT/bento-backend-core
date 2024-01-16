@@ -397,10 +397,6 @@ public class ESService {
 
         JsonArray searchHits = jsonObject.getAsJsonObject("hits").getAsJsonArray("hits");
         for (int i = 0; i < searchHits.size(); i++) {
-            // skip offset number of documents
-            if (i + 1 <= offset) {
-                continue;
-            }
             Map<String, Object> row = new HashMap<>();
             for (String[] prop: properties) {
                 String propName = prop[0];
