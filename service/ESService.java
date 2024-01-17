@@ -317,11 +317,8 @@ public class ESService {
     public List<Map<String, Object>> collectPage(Request request, Map<String, Object> query, String[][] properties) throws IOException {
         return collectPage(request, query, properties, ESService.MAX_ES_SIZE, 0);
     }
-    public List<Map<String, Object>> collectPage(Request request, Map<String, Object> query, String[][] properties,  int pageSize, int offset) throws IOException {
-        return collectPage(request, query, properties, null, pageSize, offset);
-    }
 
-    public List<Map<String, Object>> collectPage(Request request, Map<String, Object> query, String[][] properties, String[][] highlights, int pageSize, int offset) throws IOException {
+    public List<Map<String, Object>> collectPage(Request request, Map<String, Object> query, String[][] properties, int pageSize, int offset) throws IOException {
         // data over limit of Elasticsearch, have to use roll API
         if (pageSize > MAX_ES_SIZE) {
             throw new IOException("Parameter 'first' must not exceeded " + MAX_ES_SIZE);
@@ -336,7 +333,7 @@ public class ESService {
         request.setJsonEntity(gson.toJson(query));
 
         JsonObject jsonObject = send(request);
-        return collectPage(jsonObject, properties, highlights, pageSize, offset);
+        return collectPage(jsonObject, properties, pageSize);
     }
 
     // offset MUST be multiple of pageSize, otherwise the page won't be complete
@@ -397,6 +394,10 @@ public class ESService {
 
         JsonArray searchHits = jsonObject.getAsJsonObject("hits").getAsJsonArray("hits");
         for (int i = 0; i < searchHits.size(); i++) {
+            // skip offset number of documents
+            if (i + 1 <= offset) {
+                continue;
+            }
             Map<String, Object> row = new HashMap<>();
             for (String[] prop: properties) {
                 String propName = prop[0];
