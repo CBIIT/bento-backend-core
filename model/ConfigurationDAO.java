@@ -29,6 +29,8 @@ public class ConfigurationDAO {
 	private String authEndpoint;
 
 	//Neo4j Connection
+	@Value("false")
+	private boolean neo4jEnabled;
 	@Value("${neo4j.url}")
 	private String neo4jUrl;
 	@Value("${neo4j.user}")
