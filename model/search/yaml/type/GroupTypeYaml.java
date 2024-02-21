@@ -40,7 +40,7 @@ public class GroupTypeYaml extends AbstractYamlType {
 
     private List<GroupTypeQuery.Group> readYamlFile(ClassPathResource resource) throws IOException {
         logger.info(String.format("%s Yaml group file query loading...", accessType.toString()));
-        Yaml groupYaml = new Yaml();
+        Yaml groupYaml = new Yaml(new Constructor(GroupTypeQuery.class));
         GroupTypeQuery groupTypeQuery = groupYaml.load(resource.getInputStream());
         setGlobalRangeFields(groupTypeQuery);
         return groupTypeQuery.getQueries();
