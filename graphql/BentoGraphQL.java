@@ -27,8 +27,11 @@ import org.springframework.stereotype.Component;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 @Component
 public class BentoGraphQL {
@@ -40,41 +43,74 @@ public class BentoGraphQL {
     @Getter
     private final GraphQL publicGraphQL;
 
-    private final PageSizeLimitInstrumentation pageSizeLimitInstrumentation;
-
     public BentoGraphQL(
             ConfigurationDAO config,
             RedisService redisService,
             AbstractPrivateESDataFetcher privateESDataFetcher,
             AbstractPublicESDataFetcher publicESDataFetcher,
             PageSizeLimitInstrumentation pageSizeLimitInstrumentation) throws IOException {
-        this.pageSizeLimitInstrumentation = pageSizeLimitInstrumentation;
         PublicNeo4jDataFetcher publicNeo4JDataFetcher = new PublicNeo4jDataFetcher(config, redisService);
         PrivateNeo4jDataFetcher privateNeo4jDataFetcher = new PrivateNeo4jDataFetcher(config, redisService);
+        String neo4jSchemaFile = config.getSchemaFile();
+        String publicNeo4jSchemaFile = config.getPublicSchemaFile();
+        String esSchemaFile = config.getEsSchemaFile();
+        String publicESSchemaFile = config.getPublicEsSchemaFile();
 
-        if (config.isEsFilterEnabled()){
-            this.publicGraphQL = buildGraphQLWithES(config.getPublicSchemaFile(),
-                    config.getPublicEsSchemaFile(), publicNeo4JDataFetcher, publicESDataFetcher);
-            this.privateGraphQL = buildGraphQLWithES(config.getSchemaFile(), config.getEsSchemaFile(),
-                    privateNeo4jDataFetcher, privateESDataFetcher);
+        if (config.isNeo4jEnabled() && config.isEsFilterEnabled()){
+            List<GraphQLSchema> privateSchemas = buildSchemas(neo4jSchemaFile, esSchemaFile, privateNeo4jDataFetcher, privateESDataFetcher);
+            this.privateGraphQL = buildGraphQL(privateSchemas, pageSizeLimitInstrumentation);
+            List<GraphQLSchema> publicSchemas = buildSchemas(publicNeo4jSchemaFile, publicESSchemaFile, publicNeo4JDataFetcher, publicESDataFetcher);
+            this.publicGraphQL = buildGraphQL(publicSchemas, pageSizeLimitInstrumentation);
+            logger.info("Neo4j and OpenSearch have been enabled as data sources");
         }
-        else{
-            this.publicGraphQL = buildGraphQL(config.getPublicSchemaFile(), publicNeo4JDataFetcher);
-            this.privateGraphQL = buildGraphQL(config.getSchemaFile(), privateNeo4jDataFetcher);
+        else if (config.isNeo4jEnabled()){
+            List<GraphQLSchema> privateSchemas = buildNeo4jSchema(neo4jSchemaFile, privateNeo4jDataFetcher);
+            this.privateGraphQL = buildGraphQL(privateSchemas, pageSizeLimitInstrumentation);
+            List<GraphQLSchema> publicSchemas = buildNeo4jSchema(publicNeo4jSchemaFile, publicNeo4JDataFetcher);
+            this.publicGraphQL = buildGraphQL(publicSchemas, pageSizeLimitInstrumentation);
+            logger.info("Neo4j has been enabled as the data source");
+        }
+        else if (config.isEsFilterEnabled()){
+            List<GraphQLSchema> privateSchemas = buildESSchema(esSchemaFile, privateESDataFetcher);
+            this.privateGraphQL = buildGraphQL(privateSchemas, pageSizeLimitInstrumentation);
+            List<GraphQLSchema> publicSchemas = buildESSchema(publicESSchemaFile, publicESDataFetcher);
+            this.publicGraphQL = buildGraphQL(publicSchemas, pageSizeLimitInstrumentation);
+            logger.info("OpenSearch has been enabled as the data source");
+        }
+        else {
+            throw new Error("No data sources are enabled in the configuration");
         }
     }
 
-    private GraphQL buildGraphQL(String neo4jSchemaFile, AbstractNeo4jDataFetcher neo4jDataFetcher) throws IOException {
-        GraphQLSchema neo4jSchema = getNeo4jSchema(neo4jSchemaFile, neo4jDataFetcher);
-        return GraphQL.newGraphQL(neo4jSchema).instrumentation(this.pageSizeLimitInstrumentation).build();
+    private List<GraphQLSchema> buildNeo4jSchema(String neo4jSchema, AbstractNeo4jDataFetcher dataFetcher) throws IOException {
+        return buildSchemas(neo4jSchema, null, dataFetcher, null);
     }
 
-    private GraphQL buildGraphQLWithES(String neo4jSchemaFile, String esSchemaFile,
-            AbstractNeo4jDataFetcher privateNeo4JDataFetcher, AbstractESDataFetcher esBentoDataFetcher) throws IOException {
-        GraphQLSchema neo4jSchema = getNeo4jSchema(neo4jSchemaFile, privateNeo4JDataFetcher);
-        GraphQLSchema esSchema = getEsSchema(esSchemaFile, esBentoDataFetcher);
-        GraphQLSchema mergedSchema = mergeSchema(neo4jSchema, esSchema);
-        return GraphQL.newGraphQL(mergedSchema).instrumentation(this.pageSizeLimitInstrumentation).build();
+    private List<GraphQLSchema> buildESSchema(String esSchema, AbstractESDataFetcher dataFetcher) throws IOException {
+        return buildSchemas(null, esSchema, null, dataFetcher);
+    }
+
+    private List<GraphQLSchema> buildSchemas(String neo4jSchema, String esSchema, AbstractNeo4jDataFetcher neo4jDataFetcher, AbstractESDataFetcher esDataFetcher) throws IOException {
+        List<GraphQLSchema> schemas = new ArrayList<>();
+        if (neo4jSchema != null && neo4jDataFetcher != null) {
+            schemas.add(getNeo4jSchema(neo4jSchema, neo4jDataFetcher));
+        }
+        if (esSchema != null && esDataFetcher != null) {
+            schemas.add(getEsSchema(esSchema, esDataFetcher));
+        }
+        return schemas;
+    }
+
+    private GraphQL buildGraphQL(List<GraphQLSchema> schemas, PageSizeLimitInstrumentation pageSizeLimitInstrumentation) {
+        GraphQLSchema mergedSchema = null;
+        for (GraphQLSchema schema : schemas) {
+            if (mergedSchema == null) {
+                mergedSchema = schema;
+            } else {
+                mergedSchema = mergeSchema(mergedSchema, schema);
+            }
+        }
+        return GraphQL.newGraphQL(mergedSchema).instrumentation(pageSizeLimitInstrumentation).build();
     }
 
     private GraphQLSchema getNeo4jSchema(String schema, AbstractNeo4jDataFetcher dataFetcher) throws IOException {

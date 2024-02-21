@@ -47,13 +47,20 @@ public abstract class AbstractNeo4jDataFetcher implements AutoCloseable, DataFet
     protected AbstractNeo4jDataFetcher(ConfigurationDAO config, RedisService redisService) {
         this.config = config;
         this.redisService = redisService;
-        connect();
+        if (config.isNeo4jEnabled()){
+            connect();
+        }
     }
 
     private void connect() {
         String uri = config.getNeo4jUrl();
         String user = config.getNeo4jUser();
         String password = config.getNeo4jPassword();
+        if (uri.isEmpty() || user.isEmpty() || password.isEmpty()){
+            logger.error("Could not initialize Neo4j connection. Please include all Neo4j connection variables or disable Neo4j");
+            logger.error("Initialization aborted");
+            System.exit(0);
+        }
         driver = GraphDatabase.driver(uri, AuthTokens.basic(user, password));
     }
 

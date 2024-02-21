@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 @Component
-class PageSizeLimitInstrumentation extends SimpleInstrumentation {
+public class PageSizeLimitInstrumentation extends SimpleInstrumentation {
 
     private static final Logger logger = LogManager.getLogger(PageSizeLimitInstrumentation.class);
     private final int MAX_PAGE_SIZE;
