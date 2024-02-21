@@ -47,7 +47,9 @@ public abstract class AbstractNeo4jDataFetcher implements AutoCloseable, DataFet
     protected AbstractNeo4jDataFetcher(ConfigurationDAO config, RedisService redisService) {
         this.config = config;
         this.redisService = redisService;
-        connect();
+        if (config.isNeo4jEnabled()){
+            connect();
+        }
     }
 
     private void connect() {

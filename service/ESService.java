@@ -29,16 +29,18 @@ public class ESService {
 
     private static final Logger logger = LogManager.getLogger(RedisService.class);
     private RestClient client;
-    private final RestHighLevelClient restHighLevelClient;
-    private final Gson gson;
+    private RestHighLevelClient restHighLevelClient;
+    private Gson gson;
 
     public ESService(ConfigurationDAO config){
-        this.gson = new GsonBuilder().serializeNulls().create();
-        logger.info("Initializing Elasticsearch client");
-        // Base on host name to use signed request (AWS) or not (local)
-        AbstractClient abstractClient = config.isEsSignRequests() ? new AWSClient(config) : new DefaultClient(config);
-        restHighLevelClient = abstractClient.getElasticClient();
-        client = abstractClient.getLowLevelElasticClient();
+        if (config.isEsFilterEnabled()){
+            this.gson = new GsonBuilder().serializeNulls().create();
+            logger.info("Initializing Elasticsearch client");
+            // Base on host name to use signed request (AWS) or not (local)
+            AbstractClient abstractClient = config.isEsSignRequests() ? new AWSClient(config) : new DefaultClient(config);
+            restHighLevelClient = abstractClient.getElasticClient();
+            client = abstractClient.getLowLevelElasticClient();
+        }
     }
 
     @PreDestroy
