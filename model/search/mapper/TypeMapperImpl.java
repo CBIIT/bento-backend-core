@@ -31,6 +31,11 @@ public class TypeMapperImpl implements TypeMapperService {
     }
 
     @Override
+    public TypeMapper<Map<String, Object>> getMap(Set<String> returnTypes) {
+        return (response) -> getSingleHit(response, returnTypes);
+    }
+
+    @Override
     public TypeMapper<List<String>> getStrList(String field) {
         return (response) -> createStrList(response, field);
     }
@@ -166,6 +171,11 @@ public class TypeMapperImpl implements TypeMapperService {
     }
 
     @NotNull
+    private Map<String, Object> getSingleHit(SearchResponse response, Set<String> returnTypes) {
+        return getFirstHits(response, returnTypes);
+    }
+
+    @NotNull
     private List<Map<String, Object>> getMaps(SearchResponse response, Set<String> returnTypes) {
         return getListHits(response, returnTypes);
     }
@@ -216,6 +226,20 @@ public class TypeMapperImpl implements TypeMapperService {
             );
             return result;
         };
+    }
+
+
+    private Map<String, Object> getFirstHits(SearchResponse response, Set<String> returnTypes) {
+        SearchHit[] hits = response.getHits().getHits();
+        for (SearchHit hit : hits) {
+            Map<String, Object> source = hit.getSourceAsMap();
+            Map<String, Object> returnMap = parseReturnMap(returnTypes, source);
+            if (!returnMap.isEmpty()) {
+                return returnMap;
+            }
+        }
+        return Collections.emptyMap();
+
     }
 
     private List<Map<String, Object>> getListHits(SearchResponse response, Set<String> returnTypes) {
