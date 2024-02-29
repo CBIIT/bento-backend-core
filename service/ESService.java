@@ -11,9 +11,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.opensearch.OpenSearchException;
+import org.opensearch.action.admin.cluster.health.ClusterHealthRequest;
+import org.opensearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.opensearch.action.search.MultiSearchRequest;
 import org.opensearch.action.search.MultiSearchResponse;
 import org.opensearch.client.*;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PreDestroy;
@@ -44,6 +47,15 @@ public class ESService {
     @PreDestroy
     private void close() throws IOException {
         client.close();
+    }
+
+    public boolean ping(){
+        try{
+            return restHighLevelClient.ping(RequestOptions.DEFAULT);
+        } catch (IOException e) {
+            logger.error("Exception while pinging OpenSearch: "+e.getMessage());
+        }
+        return false;
     }
 
     public JsonObject send(Request request) throws IOException{
