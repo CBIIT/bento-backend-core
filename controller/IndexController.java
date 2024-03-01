@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.util.Map;
+
 
 @Controller
 public class IndexController {
@@ -44,11 +46,25 @@ public class IndexController {
 		HttpStatus responseStatus = HttpStatus.OK;
 		String responseBody = "pong";
 		if (config.isEsFilterEnabled()){
-			if (esService.ping()){
+			try{
+				if (!esService.ping()){
+					throw new HealthCheckException("OpenSearch ping unsuccessful");
+				}
 				logger.info("OpenSearch ping successful");
+				if (!esService.healthCheck()){
+					throw new HealthCheckException("OpenSearch health check unsuccessful");
+				}
+				logger.info("OpenSearch health check successful");
+				Map<String, Integer> indexNodeCounts = config.getIndexNodeCounts();
+				if (indexNodeCounts != null && !indexNodeCounts.isEmpty()){
+					if (!esService.validateIndexNodeCounts(indexNodeCounts)) {
+						throw new HealthCheckException("OpenSearch index node count validation failed");
+					}
+					logger.info("OpenSearch index node counts validated");
+				}
 			}
-			else{
-				responseBody = "OpenSearch ping unsuccessful";
+			catch (HealthCheckException e){
+				responseBody = e.getMessage();
 				responseStatus = HttpStatus.INTERNAL_SERVER_ERROR;
 				logger.error(responseBody);
 			}
@@ -58,5 +74,11 @@ public class IndexController {
 		}
 		response.setStatus(responseStatus.value());
 		return responseBody;
+	}
+
+	private static class HealthCheckException extends Exception{
+		public HealthCheckException(String message) {
+			super(message);
+		}
 	}
 }

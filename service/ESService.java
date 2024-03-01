@@ -16,6 +16,7 @@ import org.opensearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.opensearch.action.search.MultiSearchRequest;
 import org.opensearch.action.search.MultiSearchResponse;
 import org.opensearch.client.*;
+import org.opensearch.cluster.health.ClusterHealthStatus;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -56,6 +57,39 @@ public class ESService {
             logger.error("Exception while pinging OpenSearch: "+e.getMessage());
         }
         return false;
+    }
+
+    public boolean healthCheck(){
+        try{
+            ClusterHealthRequest request = new ClusterHealthRequest();
+            ClusterHealthResponse response = restHighLevelClient.cluster().health(request, RequestOptions.DEFAULT);
+            return response.getStatus() != ClusterHealthStatus.RED;
+        } catch (IOException e) {
+            logger.error("Exception while sending OpenSearch health request: "+e.getMessage());
+        }
+        return false;
+    }
+
+    public boolean validateIndexNodeCounts(Map<String, Integer> indexNodeCounts){
+        try{
+            boolean valid = true;
+            for(String index: indexNodeCounts.keySet()){
+                String endpoint = index + "/_count";
+                JsonObject response = send(new Request("GET", endpoint));
+                int count = Integer.parseInt(response.get("count").getAsString());
+                int expected = indexNodeCounts.get(index);
+                if (count < 1 || (expected > 0 && count != expected)){
+                    logger.error(String.format("%s index node count validation failed. Found: %d, Expected: %d", index, count, expected));
+                    valid = false;
+                }
+                else{
+                    logger.info(String.format("%s index node count validated", index));
+                }
+            }
+            return valid;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public JsonObject send(Request request) throws IOException{

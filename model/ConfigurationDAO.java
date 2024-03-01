@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 
+import java.util.Map;
+
 /**
  * The Configuration Bean, reads configuration setting from classpath:application.properties.
  */
@@ -77,6 +79,8 @@ public class ConfigurationDAO {
 	private boolean esFilterEnabled;
 	@Value("${es.sign.requests:true}")
 	private boolean esSignRequests;
+	@Value("#{${es.validation.index_node_counts:{}}}")
+	private Map<String, Integer> indexNodeCounts;
 
 	@Value("${es.service_name}")
 	private String serviceName;
