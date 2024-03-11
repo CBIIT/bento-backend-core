@@ -54,6 +54,7 @@ public class Const {
             public static final String GLOBAL = "global";
             public static final String GLOBAL_MULTIPLE_MODEL = "global_multi_models";
             public static final String OBJECT_ARRAY = "object_array";
+            public static final String MAP = "map";
             public static final String STRING_ARRAY = "str_array";
             public static final String GROUP_COUNT = "group_count";
             public static final String NESTED_LIST = "nested_list";
