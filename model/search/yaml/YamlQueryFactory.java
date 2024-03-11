@@ -44,6 +44,8 @@ public class YamlQueryFactory {
             switch (query.getResult().getType()) {
             case Const.YAML_QUERY.RESULT_TYPE.OBJECT_ARRAY:
                 return typeMapper.getList(param.getReturnTypes());
+            case Const.YAML_QUERY.RESULT_TYPE.MAP:
+                return typeMapper.getMap(param.getReturnTypes());
             case Const.YAML_QUERY.RESULT_TYPE.STRING_ARRAY:
                 return typeMapper.getStrList(query.getFilter().getSelectedField());
             case Const.YAML_QUERY.RESULT_TYPE.GROUP_COUNT:
