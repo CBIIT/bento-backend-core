@@ -38,7 +38,7 @@ public class ConfigurationDAO implements ApplicationContextAware {
 	private boolean allowGraphQLQuery;
 	@Value("${allow_graphql_mutation:false}")
 	private boolean allowGraphQLMutation;
-	
+
 	//Elasticsearch Configuration
 	@Value("${es.host:}")
 	private String esHost;
