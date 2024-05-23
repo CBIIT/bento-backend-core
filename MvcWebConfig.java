@@ -1,6 +1,5 @@
 package gov.nih.nci.bento;
 
-import gov.nih.nci.bento.interceptor.AuthenticationInterceptor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -48,13 +47,4 @@ public class MvcWebConfig implements WebMvcConfigurer {
 
 	}
 
-	@Bean
-	AuthenticationInterceptor authenticationInterceptor() {
-		return new AuthenticationInterceptor();
-	}
-
-	@Override
-	public void addInterceptors(final InterceptorRegistry registry) {
-		registry.addInterceptor(authenticationInterceptor());
-	}
 }

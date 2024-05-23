@@ -23,11 +23,9 @@ import java.util.*;
 @Service("ESService")
 public class ESService {
     public static final String SCROLL_ENDPOINT = "/_search/scroll";
-    public static final String JSON_OBJECT = "jsonObject";
-    public static final String AGGS = "aggs";
     public static final int MAX_ES_SIZE = 10000;
 
-    private static final Logger logger = LogManager.getLogger(RedisService.class);
+    private static final Logger logger = LogManager.getLogger(ESService.class);
     private RestClient client;
     private RestHighLevelClient restHighLevelClient;
     private Gson gson;
@@ -98,10 +96,6 @@ public class ESService {
         return buildListQuery(params, excludedParams, false);
     }
 
-    public Map<String, Object> buildListQuery() {
-        return buildListQuery(Map.of(), Set.of(), true);
-    }
-
     public Map<String, Object> buildListQuery(Map<String, Object> params, Set<String> excludedParams, boolean ignoreCase) {
         Map<String, Object> result = new HashMap<>();
 
@@ -131,10 +125,6 @@ public class ESService {
 
         result.put("query", Map.of("bool", Map.of("filter", filter)));
         return result;
-    }
-
-    public Map<String, Object> buildFacetFilterQuery(Map<String, Object> params) throws IOException {
-        return buildFacetFilterQuery(params, Set.of());
     }
 
     public Map<String, Object> buildFacetFilterQuery(Map<String, Object> params, Set<String> rangeParams)  throws IOException {
@@ -263,63 +253,6 @@ public class ESService {
         return data;
     }
 
-
-
-    public List<String> collectBucketKeys(JsonArray buckets) {
-        List<String> keys = new ArrayList<>();
-        for (var bucket: buckets) {
-            keys.add(bucket.getAsJsonObject().get("key").getAsString());
-        }
-        return keys;
-    }
-
-    public List<String> collectField(Request request, String fieldName) throws IOException {
-        List<String> results = new ArrayList<>();
-
-        request.addParameter("scroll", "10S");
-        JsonObject jsonObject = send(request);
-        JsonArray searchHits = jsonObject.getAsJsonObject("hits").getAsJsonArray("hits");
-
-        while (searchHits != null && searchHits.size() > 0) {
-            logger.info("Current " + fieldName + " records: " + results.size() + " collecting...");
-            for (int i = 0; i < searchHits.size(); i++) {
-                String value = searchHits.get(i).getAsJsonObject().get("_source").getAsJsonObject().get(fieldName).getAsString();
-                results.add(value);
-            }
-
-            Request scrollRequest = new Request("POST", SCROLL_ENDPOINT);
-            String scrollId = jsonObject.get("_scroll_id").getAsString();
-            Map<String, Object> scrollQuery = Map.of(
-                    "scroll", "10S",
-                    "scroll_id", scrollId
-            );
-            scrollRequest.setJsonEntity(gson.toJson(scrollQuery));
-            jsonObject = send(scrollRequest);
-            searchHits = jsonObject.getAsJsonObject("hits").getAsJsonArray("hits");
-        }
-
-        String scrollId = jsonObject.get("_scroll_id").getAsString();
-        Request clearScrollRequest = new Request("DELETE", SCROLL_ENDPOINT);
-        clearScrollRequest.setJsonEntity("{\"scroll_id\":\"" + scrollId +"\"}");
-        send(clearScrollRequest);
-
-        return results;
-    }
-
-    public int getTotalHits(JsonObject jsonObject) {
-        return jsonObject.get("hits").getAsJsonObject().get("total").getAsJsonObject().get("value").getAsInt();
-    }
-
-    public List<Map<String, Object>> collectPage(Map<String, Object> params, String endpoint, String[][] properties) throws IOException {
-        Map<String, Object> query = buildListQuery(params, Set.of(),false);
-        Request request = new Request("GET", endpoint);
-        return collectPage(request, query, properties);
-    }
-
-    public List<Map<String, Object>> collectPage(Request request, Map<String, Object> query, String[][] properties) throws IOException {
-        return collectPage(request, query, properties, ESService.MAX_ES_SIZE, 0);
-    }
-
     public List<Map<String, Object>> collectPage(Request request, Map<String, Object> query, String[][] properties, int pageSize, int offset) throws IOException {
         // data over limit of Elasticsearch, have to use roll API
         if (pageSize > MAX_ES_SIZE) {
@@ -423,34 +356,6 @@ public class ESService {
             }
         }
         return data;
-    }
-
-    public List<Map<String, Object>> getFilteredGroupCount(Map<String, Object> params, String endpoint, String aggregationField) throws IOException {
-        return getFilteredGroupCount(params, endpoint, new String[]{aggregationField});
-    }
-
-    public List<Map<String, Object>> getFilteredGroupCount(Map<String, Object> params, String endpoint, String[] aggregationFields) throws IOException {
-        Map<String, Object> query = buildFacetFilterQuery(params);
-        query = addAggregations(query, aggregationFields);
-        Request request = new Request("GET", endpoint);
-        request.setJsonEntity(gson.toJson(query));
-        JsonObject result = send(request);
-        List<Map<String, Object>> groupCounts = new ArrayList<>();
-        JsonArray buckets = result
-                .getAsJsonObject("aggregations")
-                .getAsJsonObject("diagnoses")
-                .getAsJsonArray("buckets");
-        for (JsonElement element: buckets){
-            JsonObject groupCount = element.getAsJsonObject();
-            String group = groupCount.get("key").getAsString();
-            groupCounts.add(
-                    Map.of(
-                            "group", group,
-                            "subjects", groupCount.get("doc_count").getAsInt()
-                    )
-            );
-        }
-        return groupCounts;
     }
 
     // Convert JsonElement into Java collections and primitives

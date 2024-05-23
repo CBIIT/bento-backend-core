@@ -16,7 +16,6 @@ import org.apache.logging.log4j.Logger;
 import org.opensearch.action.search.SearchRequest;
 import org.springframework.core.io.ClassPathResource;
 import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.Constructor;
 
 import java.io.IOException;
 import java.util.List;
@@ -30,8 +29,8 @@ public class SingleTypeYaml extends AbstractYamlType {
 
     private List<YamlQuery> readYamlFile(ClassPathResource resource) throws IOException {
         logger.info(String.format("%s Yaml single file query loading...", accessType.toString()));
-        Yaml yaml = new Yaml(new Constructor(SingleTypeQuery.class));
-        SingleTypeQuery singleTypeQuery = yaml.load(resource.getInputStream());
+        Yaml yaml = new Yaml();
+        SingleTypeQuery singleTypeQuery = yaml.loadAs(resource.getInputStream(), SingleTypeQuery.class);
         return singleTypeQuery.getQueries();
     }
 
