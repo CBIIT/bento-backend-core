@@ -358,6 +358,27 @@ public class ESService {
         return data;
     }
 
+    public Map<String, Object> buildMaximumQuery(String[] maxFields) throws IOException {
+        Map<String, Object> result = new HashMap<>();
+        Map<String, Object> aggs = new HashMap<>();
+        for (String field: maxFields) {
+            aggs.put(field, Map.of("max", Map.of("field", field)));
+        }
+        result.put("size", 0);
+        result.put("aggs", aggs);
+        return result;
+    }
+    public Map<String, Integer> collectMaximumAggs(JsonObject jsonObject, String[] maxFields) {
+        Map<String, Integer> data = new HashMap<>();
+        JsonObject aggs = jsonObject.getAsJsonObject("aggregations");
+        for (String field: maxFields) {
+            JsonObject fieldObject = aggs.getAsJsonObject(field);
+            int value = fieldObject.get("value").getAsInt();
+            data.put(field, value);
+        }
+        return data;
+    }
+
     // Convert JsonElement into Java collections and primitives
     private Object getValue(JsonElement element) {
         Object value = null;
