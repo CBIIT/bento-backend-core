@@ -113,6 +113,7 @@ public class GraphQLController {
 		String operation;
 		try{
 			query = new String(jsonObject.get("query").getAsString().getBytes(), StandardCharsets.UTF_8);
+			logger.info("Parsing query: " + query);
 			JsonElement rawVar = jsonObject.get("variables");
 			variables = gson.fromJson(rawVar, Map.class);
 			Parser parser = new Parser();
