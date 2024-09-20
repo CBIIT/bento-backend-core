@@ -33,7 +33,7 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
     @Autowired
     private ConfigurationDAO config;
 
-    @Override
+
     public boolean preHandle(final HttpServletRequest request, HttpServletResponse response, final Object handler) throws IOException {
         //Verify that the request is not for the version endpoint and that request authentication is enabled
         if (config.isAuthEnabled() && Arrays.asList(PRIVATE_ENDPOINTS).contains(request.getServletPath())){
