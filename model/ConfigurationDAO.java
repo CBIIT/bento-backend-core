@@ -1,5 +1,6 @@
 package gov.nih.nci.bento.model;
 
+import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
@@ -13,8 +14,6 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.annotation.Order;
-
-import javax.annotation.PostConstruct;
 
 /**
  * The Configuration Bean, reads configuration setting from classpath:application.properties.
