@@ -116,7 +116,7 @@ public class GraphQLController {
 			JsonElement rawVar = jsonObject.get("variables");
 			variables = gson.fromJson(rawVar, Map.class);
             // Verify that all parameter inputs are less than 1000 values
-			int maxValues = 6000;
+			int maxValues = 60000;
             for (String key: variables.keySet()){
 				Object valuesObject = variables.get(key);
 				if (!(valuesObject instanceof List)){
