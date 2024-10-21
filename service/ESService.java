@@ -1,11 +1,13 @@
 package gov.nih.nci.bento.service;
 
 import com.google.gson.*;
+
 import gov.nih.nci.bento.model.ConfigurationDAO;
 import gov.nih.nci.bento.model.search.MultipleRequests;
 import gov.nih.nci.bento.service.connector.AWSClient;
 import gov.nih.nci.bento.service.connector.AbstractClient;
 import gov.nih.nci.bento.service.connector.DefaultClient;
+
 import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,7 +27,8 @@ public class ESService {
     public static final String SCROLL_ENDPOINT = "/_search/scroll";
     public static final String JSON_OBJECT = "jsonObject";
     public static final String AGGS = "aggs";
-    public static final int MAX_ES_SIZE = 10000;
+    public static final int MAX_ES_SIZE = 60000;
+    public static final int SCROLL_THRESHOLD = 10000;
 
     private static final Logger logger = LogManager.getLogger(RedisService.class);
     private RestClient client;
@@ -123,7 +126,7 @@ public class ESService {
                 }
             }
             filter.add(Map.of(
-                    "terms", Map.of( key, valueSet)
+                "terms", Map.of( key, valueSet)
             ));
         }
 
@@ -261,8 +264,6 @@ public class ESService {
         return data;
     }
 
-
-
     public List<String> collectBucketKeys(JsonArray buckets) {
         List<String> keys = new ArrayList<>();
         for (var bucket: buckets) {
@@ -319,65 +320,110 @@ public class ESService {
     }
 
     public List<Map<String, Object>> collectPage(Request request, Map<String, Object> query, String[][] properties, int pageSize, int offset) throws IOException {
-        // data over limit of Elasticsearch, have to use roll API
+        // Make sure page size is less than max allowed size
         if (pageSize > MAX_ES_SIZE) {
             throw new IOException("Parameter 'first' must not exceeded " + MAX_ES_SIZE);
         }
-        if (pageSize + offset > MAX_ES_SIZE) {
+
+        // Check whether to use scroll
+        if (pageSize + offset > SCROLL_THRESHOLD) {
             return collectPageWithScroll(request, query, properties, pageSize, offset);
         }
 
         // data within limit can use just from/size
         query.put("size", pageSize);
         query.put("from", offset);
-        request.setJsonEntity(gson.toJson(query));
+        String queryJson = gson.toJson(query);
+        request.setJsonEntity(queryJson);
 
         JsonObject jsonObject = send(request);
         return collectPage(jsonObject, properties, pageSize);
     }
 
-    // offset MUST be multiple of pageSize, otherwise the page won't be complete
+    /**
+     * Uses scroll to obtain results
+     * @param request The Opensearch request
+     * @param query The query to be sent in the body of the Opensearch request
+     * @param properties The Opensearch properties to retrieve
+     * @param pageSize The desired number of results to obtain
+     * @param offset The desired offset of the results
+     * @return
+     * @throws IOException
+     */
     private List<Map<String, Object>> collectPageWithScroll(
             Request request, Map<String, Object> query, String[][] properties, int pageSize, int offset) throws IOException {
-        final int optimumSize = ( MAX_ES_SIZE / pageSize ) * pageSize;
-        if (offset % pageSize != 0) {
-            throw new IOException("'offset' must be multiple of 'first'!");
-        }
-        query.put("size", optimumSize);
-        request.setJsonEntity(gson.toJson(query));
+        query.put("size", SCROLL_THRESHOLD);
+        String jsonizedQuery = gson.toJson(query);
+        request.setJsonEntity(jsonizedQuery);
         request.addParameter("scroll", "10S");
-        JsonObject page = rollToPage(request, offset);
-        return collectPage(page, properties, pageSize, offset % optimumSize);
+        JsonObject page = rollToPage(request, pageSize, offset);
+        return collectPage(page, properties, pageSize, offset % SCROLL_THRESHOLD);
     }
 
-    private JsonObject rollToPage(Request request, int offset) throws IOException {
-        int rolledRecords = 0;
-        JsonObject jsonObject = send(request);
-        String scrollId = jsonObject.get("_scroll_id").getAsString();
-        JsonArray searchHits = jsonObject.getAsJsonObject("hits").getAsJsonArray("hits");
-        rolledRecords += searchHits.size();
+    /**
+     * Sends consecutive scroll requests to get the desired number of records
+     * @param request The Opensearch request
+     * @param pageSize How many records to obtain
+     * @param offset How many records to skip
+     * @return
+     * @throws IOException
+     */
+    private JsonObject rollToPage(Request request, int pageSize, int offset) throws IOException {
+        // Variables involved with the return object
+        JsonArray allHits = new JsonArray(); // All the hits gathered so far
+        JsonObject outerHits = new JsonObject(); // Helper JSON object for the results
+        JsonObject results = new JsonObject(); // The results to return
 
-        while (rolledRecords <= offset && searchHits.size() > 0) {
-            // Keep roll until correct page
-            logger.info("Current records: " + rolledRecords + " collecting...");
-            Request scrollRequest = new Request("POST", SCROLL_ENDPOINT);
+        // Variables used for scrolling
+        Request clearScrollRequest = new Request("DELETE", SCROLL_ENDPOINT);
+        int numCumulativeHits = 0; // Number of hits gathered so far
+        String scrollId = null;
+        Request scrollRequest = request;
+
+        // Send scroll requests
+        while (numCumulativeHits < pageSize + offset) {
+            logger.info("Current records: " + numCumulativeHits + ". Collecting more records...");
+
+            // Execute the scroll request
+            JsonObject scrollResults = send(scrollRequest);
+            JsonArray searchHits = scrollResults.getAsJsonObject("hits").getAsJsonArray("hits");
+            int numScrollHits = searchHits.size();
+            numCumulativeHits += numScrollHits;
+            scrollId = scrollResults.get("_scroll_id").getAsString();
+
+            logger.info("...collected " + numScrollHits + " records. Current records: " + numCumulativeHits);
+
+            // Stop scrolling if there are no records left
+            if (numScrollHits <= 0) {
+                break;
+            }
+
+            // Only add the hits if we've reached the scroll window of the desired results
+            if (numCumulativeHits > offset) {
+                allHits.addAll(searchHits);
+            }
+
+            // Form the next scroll request
+            scrollRequest = new Request("POST", SCROLL_ENDPOINT);
             Map<String, Object> scrollQuery = Map.of(
                     "scroll", "10S",
                     "scroll_id", scrollId
             );
-            scrollRequest.setJsonEntity(gson.toJson(scrollQuery));
-            jsonObject = send(scrollRequest);
-            scrollId = jsonObject.get("_scroll_id").getAsString();
-            searchHits = jsonObject.getAsJsonObject("hits").getAsJsonArray("hits");
-            rolledRecords += searchHits.size();
+            String scrollQueryJson = gson.toJson(scrollQuery);
+            scrollRequest.setJsonEntity(scrollQueryJson);
         }
 
-        // Now return page
-        scrollId = jsonObject.get("_scroll_id").getAsString();
-        Request clearScrollRequest = new Request("DELETE", SCROLL_ENDPOINT);
-        clearScrollRequest.setJsonEntity("{\"scroll_id\":\"" + scrollId +"\"}");
-        send(clearScrollRequest);
-        return jsonObject;
+        // Close the scroll context
+        if (scrollId != null) {
+            clearScrollRequest.setJsonEntity("{\"scroll_id\":\"" + scrollId +"\"}");
+            send(clearScrollRequest);
+        }
+
+        // Format the return object
+        outerHits.add("hits", allHits);
+        results.add("hits", outerHits);
+
+        return results;
     }
 
     // Collect a page of data, result will be of pageSize or less if not enough data remains
@@ -385,7 +431,7 @@ public class ESService {
         return collectPage(jsonObject, properties, pageSize, 0);
     }
 
-    private List<Map<String, Object>> collectPage(JsonObject jsonObject, String[][] properties, int pageSize, int offset) throws IOException {
+    public List<Map<String, Object>> collectPage(JsonObject jsonObject, String[][] properties, int pageSize, int offset) throws IOException {
         return collectPage(jsonObject, properties, null, pageSize, offset);
     }
 
