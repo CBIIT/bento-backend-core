@@ -27,8 +27,9 @@ public class ESService {
     public static final String SCROLL_ENDPOINT = "/_search/scroll";
     public static final String JSON_OBJECT = "jsonObject";
     public static final String AGGS = "aggs";
-    public static final int MAX_ES_SIZE = 60000;
-    public static final int SCROLL_THRESHOLD = 10000;
+    public static final int MAX_ES_SIZE = 60000; // Do not return more than this number of records
+    public static final int SCROLL_THRESHOLD = 10000; // Use scroll when trying to retrieve past this number of records
+    public static final int SCROLL_SIZE = 10000; // How big each scroll should be
 
     private static final Logger logger = LogManager.getLogger(RedisService.class);
     private RestClient client;
@@ -352,12 +353,12 @@ public class ESService {
      */
     private List<Map<String, Object>> collectPageWithScroll(
             Request request, Map<String, Object> query, String[][] properties, int pageSize, int offset) throws IOException {
-        query.put("size", SCROLL_THRESHOLD);
+        query.put("size", SCROLL_SIZE);
         String jsonizedQuery = gson.toJson(query);
         request.setJsonEntity(jsonizedQuery);
         request.addParameter("scroll", "10S");
         JsonObject page = rollToPage(request, pageSize, offset);
-        return collectPage(page, properties, pageSize, offset % SCROLL_THRESHOLD);
+        return collectPage(page, properties, pageSize, offset % SCROLL_SIZE);
     }
 
     /**
@@ -431,7 +432,7 @@ public class ESService {
         return collectPage(jsonObject, properties, pageSize, 0);
     }
 
-    public List<Map<String, Object>> collectPage(JsonObject jsonObject, String[][] properties, int pageSize, int offset) throws IOException {
+    private List<Map<String, Object>> collectPage(JsonObject jsonObject, String[][] properties, int pageSize, int offset) throws IOException {
         return collectPage(jsonObject, properties, null, pageSize, offset);
     }
 
