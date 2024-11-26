@@ -12,8 +12,8 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.exceptions.JedisException;
 import redis.clients.jedis.JedisPoolConfig;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
