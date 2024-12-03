@@ -115,7 +115,7 @@ public class GlobalQueryFilter {
             yamlHighlight.getFields().forEach(highlightBuilder::field);
             highlightBuilder.preTags(yamlHighlight.getPreTag() == null ? "" : yamlHighlight.getPreTag());
             highlightBuilder.postTags(yamlHighlight.getPostTag() == null ? "" : yamlHighlight.getPostTag());
-            if (highlightBuilder.fragmentSize() != null) highlightBuilder.fragmentSize(yamlHighlight.getFragmentSize());
+            if (highlightBuilder.fragmentSize(yamlHighlight.getFragmentSize()) != null) highlightBuilder.fragmentSize(yamlHighlight.getFragmentSize());
             builder.highlighter(highlightBuilder);
         }
     }
