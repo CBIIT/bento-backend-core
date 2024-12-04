@@ -77,7 +77,7 @@ public class GraphQLController {
 	}
 
 	@CrossOrigin
-	@RequestMapping(value = {"/v1/graphql/", "/v1/public-graphql/"}, method = {RequestMethod.GET, RequestMethod.HEAD,
+	@RequestMapping(value = {"/v1/graphql/"}, method = {RequestMethod.GET, RequestMethod.HEAD,
 			RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.TRACE, RequestMethod.OPTIONS, RequestMethod.PATCH},
 			produces = MediaType.APPLICATION_JSON_VALUE + "; charset=utf-8")
 	public ResponseEntity<String> getPrivateGraphQLResponseByGET() {
@@ -93,14 +93,14 @@ public class GraphQLController {
         return getGraphQLResponse(httpEntity, bentoGraphQL.getPrivateGraphQL());
 	}
 
-	@CrossOrigin
-	@RequestMapping(value = "/v1/public-graphql/", method = RequestMethod.POST,
-			produces = MediaType.APPLICATION_JSON_VALUE + "; charset=utf-8")
-	@ResponseBody
-	public ResponseEntity<String> getPublicGraphQLResponse(HttpEntity<String> httpEntity){
-        logger.info("hit end point:/v1/public-graphql/");
-		return getGraphQLResponse(httpEntity, bentoGraphQL.getPublicGraphQL());
-	}
+	// @CrossOrigin
+	// @RequestMapping(value = "/v1/public-graphql/", method = RequestMethod.POST,
+	// 		produces = MediaType.APPLICATION_JSON_VALUE + "; charset=utf-8")
+	// @ResponseBody
+	// public ResponseEntity<String> getPublicGraphQLResponse(HttpEntity<String> httpEntity){
+    //     logger.info("hit end point:/v1/public-graphql/");
+	// 	return getGraphQLResponse(httpEntity, bentoGraphQL.getPublicGraphQL());
+	// }
 
 	@ResponseBody
 	private ResponseEntity<String> getGraphQLResponse(HttpEntity<String> httpEntity, GraphQL graphQL) {
@@ -178,7 +178,7 @@ public class GraphQLController {
 
 		ResponseEntity<String> queryDataSourceVersion(){
 			try{
-				ResponseEntity<String> responseEntity = getGraphQLResponse(httpEntity,bentoGraphQL.getPublicGraphQL());
+				ResponseEntity<String> responseEntity = getGraphQLResponse(httpEntity,bentoGraphQL.getPrivateGraphQL());
 				JsonObject jsonResponseBody = gson.fromJson(responseEntity.getBody(), JsonObject.class);
 				if (jsonResponseBody.has("errors")){
 					jsonResponseBody.getAsJsonArray("errors").forEach(x-> logger.error(x.getAsJsonObject()

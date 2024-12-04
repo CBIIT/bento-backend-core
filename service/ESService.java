@@ -16,7 +16,7 @@ import org.opensearch.action.search.MultiSearchResponse;
 import org.opensearch.client.*;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PreDestroy;
+import jakarta.annotation.PreDestroy;
 import java.io.IOException;
 import java.util.*;
 

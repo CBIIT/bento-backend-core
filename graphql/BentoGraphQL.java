@@ -3,10 +3,10 @@ package gov.nih.nci.bento.graphql;
 import gov.nih.nci.bento.model.AbstractESDataFetcher;
 import gov.nih.nci.bento.model.AbstractNeo4jDataFetcher;
 import gov.nih.nci.bento.model.AbstractPrivateESDataFetcher;
-import gov.nih.nci.bento.model.AbstractPublicESDataFetcher;
+// import gov.nih.nci.bento.model.AbstractPublicESDataFetcher;
 import gov.nih.nci.bento.model.ConfigurationDAO;
 import gov.nih.nci.bento.model.PrivateNeo4jDataFetcher;
-import gov.nih.nci.bento.model.PublicNeo4jDataFetcher;
+// import gov.nih.nci.bento.model.PublicNeo4jDataFetcher;
 import gov.nih.nci.bento.service.RedisService;
 import graphql.GraphQL;
 import graphql.schema.GraphQLNamedType;
@@ -35,32 +35,32 @@ public class BentoGraphQL {
     private static final Logger logger = LogManager.getLogger(BentoGraphQL.class);
 
     private final GraphQL privateGraphQL;
-    private final GraphQL publicGraphQL;
+    // private final GraphQL publicGraphQL;
 
     public BentoGraphQL(
             ConfigurationDAO config,
             RedisService redisService,
-            AbstractPrivateESDataFetcher privateESDataFetcher,
-            AbstractPublicESDataFetcher publicESDataFetcher
+            AbstractPrivateESDataFetcher privateESDataFetcher
+            // AbstractPublicESDataFetcher publicESDataFetcher
     ) throws IOException {
-        PublicNeo4jDataFetcher publicNeo4JDataFetcher = new PublicNeo4jDataFetcher(config, redisService);
+        // PublicNeo4jDataFetcher publicNeo4JDataFetcher = new PublicNeo4jDataFetcher(config, redisService);
         PrivateNeo4jDataFetcher privateNeo4jDataFetcher = new PrivateNeo4jDataFetcher(config, redisService);
 
         if (config.isEsFilterEnabled()){
-            this.publicGraphQL = buildGraphQLWithES(config.getPublicSchemaFile(),
-                    config.getPublicEsSchemaFile(), publicNeo4JDataFetcher, publicESDataFetcher);
+            // this.publicGraphQL = buildGraphQLWithES(config.getPublicSchemaFile(),
+            //         config.getPublicEsSchemaFile(), publicNeo4JDataFetcher, publicESDataFetcher);
             this.privateGraphQL = buildGraphQLWithES(config.getSchemaFile(), config.getEsSchemaFile(),
                     privateNeo4jDataFetcher, privateESDataFetcher);
         }
         else{
-            this.publicGraphQL = buildGraphQL(config.getPublicSchemaFile(), publicNeo4JDataFetcher);
+            // this.publicGraphQL = buildGraphQL(config.getPublicSchemaFile(), publicNeo4JDataFetcher);
             this.privateGraphQL = buildGraphQL(config.getSchemaFile(), privateNeo4jDataFetcher);
         }
     }
 
-    public GraphQL getPublicGraphQL() {
-        return publicGraphQL;
-    }
+    // public GraphQL getPublicGraphQL() {
+    //     return publicGraphQL;
+    // }
 
     public GraphQL getPrivateGraphQL() {
         return privateGraphQL;

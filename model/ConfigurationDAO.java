@@ -43,10 +43,10 @@ public class ConfigurationDAO {
 	private String esSchemaFile;
 
 	//Public Graphql Schemas
-	@Value("${graphql.public.schema}")
-	private String publicSchemaFile;
-	@Value("${graphql.public.es_schema}")
-	private String publicEsSchemaFile;
+	// @Value("${graphql.public.schema}")
+	// private String publicSchemaFile;
+	// @Value("${graphql.public.es_schema}")
+	// private String publicEsSchemaFile;
 
 	//Operation Type Enable
 	@Value("${allow_graphql_query}")

@@ -30,8 +30,8 @@ public class SingleTypeYaml extends AbstractYamlType {
 
     private List<YamlQuery> readYamlFile(ClassPathResource resource) throws IOException {
         logger.info(String.format("%s Yaml single file query loading...", accessType.toString()));
-        Yaml yaml = new Yaml(new Constructor(SingleTypeQuery.class));
-        SingleTypeQuery singleTypeQuery = yaml.load(resource.getInputStream());
+        Yaml yaml = new Yaml();
+        SingleTypeQuery singleTypeQuery = yaml.loadAs(resource.getInputStream(), SingleTypeQuery.class);
         return singleTypeQuery.getQueries();
     }
 
