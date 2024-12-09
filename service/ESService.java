@@ -25,7 +25,7 @@ public class ESService {
     public static final String SCROLL_ENDPOINT = "/_search/scroll";
     public static final String JSON_OBJECT = "jsonObject";
     public static final String AGGS = "aggs";
-    public static final int MAX_ES_SIZE = 10000;
+    public static final int MAX_ES_SIZE = 20000;
 
     private static final Logger logger = LogManager.getLogger(RedisService.class);
     private RestClient client;

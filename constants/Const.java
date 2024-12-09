@@ -4,7 +4,7 @@ public class Const {
 
     public static class ES_UNITS {
         public static final int DEFAULT_SIZE = 10;
-        public static final int MAX_SIZE = 10000;
+        public static final int MAX_SIZE = 200000;
         public static final String GS_HIGHLIGHT_DELIMITER = "$";
         public static final String KEYWORD = ".keyword";
     }
