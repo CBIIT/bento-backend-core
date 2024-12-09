@@ -18,7 +18,7 @@ public class Const {
 
         public static final String SORT_DIRECTION = "sort_direction";
         public static final String CASE_IDS = "case_ids";
-        public static final int AGGS_SIZE = 1000;
+        public static final int AGGS_SIZE = 200000;
         public static final String INPUT = "input";
         public static final String NESTED_FILTER = "FILTER_INFO";
     }
