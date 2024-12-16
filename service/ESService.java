@@ -28,7 +28,7 @@ public class ESService {
     public static final String JSON_OBJECT = "jsonObject";
     public static final String AGGS = "aggs";
     public static final int MAX_ES_SIZE = 200000; // Do not return more than this number of records
-    public static final int SCROLL_THRESHOLD = 0; // Use scroll when trying to retrieve past this number of records
+    public static final int SCROLL_THRESHOLD = 10000; // Use scroll when trying to retrieve past this number of records
     public static final int SCROLL_SIZE = 10000; // How big each scroll should be
 
     private static final Logger logger = LogManager.getLogger(RedisService.class);
