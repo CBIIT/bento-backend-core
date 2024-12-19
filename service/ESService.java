@@ -29,7 +29,7 @@ public class ESService {
     public static final String AGGS = "aggs";
     public static final int MAX_ES_SIZE = 200000; // Do not return more than this number of records
     public static final int SCROLL_THRESHOLD = 10000; // Use scroll when trying to retrieve past this number of records
-    public static final int SCROLL_SIZE = 10000; // How big each scroll should be
+    public static final int SCROLL_SIZE = 50000; // How big each scroll should be
 
     private static final Logger logger = LogManager.getLogger(RedisService.class);
     private RestClient client;
@@ -276,7 +276,7 @@ public class ESService {
     public List<String> collectField(Request request, String fieldName) throws IOException {
         List<String> results = new ArrayList<>();
 
-        request.addParameter("scroll", "10S");
+        request.addParameter("scroll", "20S");
         JsonObject jsonObject = send(request);
         JsonArray searchHits = jsonObject.getAsJsonObject("hits").getAsJsonArray("hits");
 
@@ -290,7 +290,7 @@ public class ESService {
             Request scrollRequest = new Request("POST", SCROLL_ENDPOINT);
             String scrollId = jsonObject.get("_scroll_id").getAsString();
             Map<String, Object> scrollQuery = Map.of(
-                    "scroll", "10S",
+                    "scroll", "20S",
                     "scroll_id", scrollId
             );
             scrollRequest.setJsonEntity(gson.toJson(scrollQuery));
@@ -356,7 +356,7 @@ public class ESService {
         query.put("size", SCROLL_SIZE);
         String jsonizedQuery = gson.toJson(query);
         request.setJsonEntity(jsonizedQuery);
-        request.addParameter("scroll", "10S");
+        request.addParameter("scroll", "20S");
         JsonObject page = rollToPage(request, pageSize, offset);
         return collectPage(page, properties, pageSize, offset % SCROLL_SIZE);
     }
@@ -407,7 +407,7 @@ public class ESService {
             // Form the next scroll request
             scrollRequest = new Request("POST", SCROLL_ENDPOINT);
             Map<String, Object> scrollQuery = Map.of(
-                    "scroll", "10S",
+                    "scroll", "20S",
                     "scroll_id", scrollId
             );
             String scrollQueryJson = gson.toJson(scrollQuery);
