@@ -474,7 +474,7 @@ public class ESService {
         return data;
     }
 
-    public List<Map<String, Object>> collectScrollPage(JsonArray searchHits, String[][] properties, String[][] highlights, int pageSize, int offset) throws IOException {
+    public List<Map<String, Object>> collectScrollPage(JsonArray searchHits, String[][] properties, int pageSize, int offset) throws IOException {
         List<Map<String, Object>> data = new ArrayList<>();
 
         //JsonArray searchHits = jsonObject.getAsJsonObject("hits").getAsJsonArray("hits");
