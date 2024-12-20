@@ -22,6 +22,10 @@ import jakarta.annotation.PreDestroy;
 import java.io.IOException;
 import java.util.*;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryMXBean;
+import java.lang.management.MemoryUsage;
+
 @Service("ESService")
 public class ESService {
     public static final String SCROLL_ENDPOINT = "/_search/scroll";
@@ -59,6 +63,32 @@ public class ESService {
             throw new IOException(msg);
         }
         return getJSonFromResponse(response);
+    }
+
+    public void checkMemoryInit() {
+        // Get the Java Runtime object
+        Runtime runtime = Runtime.getRuntime();
+
+        // Get the maximum heap size (in bytes)
+        long maxMemory = runtime.maxMemory();
+        // Get the initial heap size (in bytes)
+        long initialMemory = runtime.totalMemory();
+        // Get the current available memory (in bytes)
+        long freeMemory = runtime.freeMemory();
+
+        // Convert to MB for better readability
+        System.out.println("Initial Heap Size: " + (initialMemory / (1024 * 1024)) + " MB");
+        System.out.println("Maximum Heap Size: " + (maxMemory / (1024 * 1024)) + " MB");
+        System.out.println("Free Memory: " + (freeMemory / (1024 * 1024)) + " MB");
+    }
+
+    public void checkMemoryNow() {
+        // Optionally log the memory usage using MemoryMXBean
+        MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
+        MemoryUsage heapMemoryUsage = memoryMXBean.getHeapMemoryUsage();
+        
+        System.out.println("Used Heap Memory: " + (heapMemoryUsage.getUsed() / (1024 * 1024)) + " MB");
+        System.out.println("Committed Heap Memory: " + (heapMemoryUsage.getCommitted() / (1024 * 1024)) + " MB");
     }
 
     public <T> Map<String, T> elasticMultiSend(@NotNull List<MultipleRequests> requests) throws IOException {
@@ -360,6 +390,7 @@ public class ESService {
         // JsonObject page = rollToPage(request, pageSize, offset);
         // return collectPage(page, properties, pageSize, offset % SCROLL_SIZE);
         JsonArray page = rollToPage(request, pageSize, offset);
+        checkMemoryInit();
         return collectScrollPage(page, properties, pageSize, offset % SCROLL_SIZE);
     }
 
@@ -491,12 +522,9 @@ public class ESService {
                 JsonElement element = searchHits.get(i).getAsJsonObject().get("_source").getAsJsonObject().get(dataField);
                 row.put(propName, getValue(element));
             }
-            try {
-                data.add(row);
-                System.out.println("total hashmap size: " + data.size() + " rows. ");
-            } catch (OutOfMemoryError e) {
-                System.err.println("Out of memory error: " + e.getMessage());
-            }
+            data.add(row);
+            System.out.println("total hashmap size: " + data.size() + " rows. ");
+            checkMemoryNow();
             if (data.size() >= pageSize) {
                 break;
             }
