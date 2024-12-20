@@ -359,7 +359,7 @@ public class ESService {
         request.addParameter("scroll", "1m");
         // JsonObject page = rollToPage(request, pageSize, offset);
         // return collectPage(page, properties, pageSize, offset % SCROLL_SIZE);
-        JsonObject page = rollToPage(request, pageSize, offset);
+        JsonArray page = rollToPage(request, pageSize, offset);
         return collectScrollPage(page, properties, pageSize, offset % SCROLL_SIZE);
     }
 
