@@ -523,8 +523,10 @@ public class ESService {
                 row.put(propName, getValue(element));
             }
             data.add(row);
-            System.out.println("total hashmap size: " + data.size() + " rows. ");
-            checkMemoryNow();
+            if (data.size() % 1000 == 0) {
+                System.out.println("total hashmap size: " + data.size() + " rows. ");
+                checkMemoryNow();
+            }
             if (data.size() >= pageSize) {
                 break;
             }
