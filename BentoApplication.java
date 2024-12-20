@@ -15,12 +15,6 @@ public class BentoApplication extends SpringBootServletInitializer {
 
 	public static void main(String[] args) {
 		SpringApplication.run(BentoApplication.class, args);
-	}
-
-	@Override
-	protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
-		logger.info("Server started");
-
 		// Get the Java Runtime object
         Runtime runtime = Runtime.getRuntime();
 
@@ -42,6 +36,11 @@ public class BentoApplication extends SpringBootServletInitializer {
         
         System.out.println("Used Heap Memory: " + (heapMemoryUsage.getUsed() / (1024 * 1024)) + " MB");
         System.out.println("Committed Heap Memory: " + (heapMemoryUsage.getCommitted() / (1024 * 1024)) + " MB");
+	}
+
+	@Override
+	protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
+		logger.info("Server started");
 
 		return application.sources(BentoApplication.class);
 
