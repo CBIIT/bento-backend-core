@@ -402,6 +402,7 @@ public class ESService {
             // Only add the hits if we've reached the scroll window of the desired results
             if (numCumulativeHits > offset) {
                 allHits.addAll(searchHits);
+                System.out.println("added " + numCumulativeHits + " records. ");
             }
 
             // Form the next scroll request
@@ -423,7 +424,7 @@ public class ESService {
         // Format the return object
         outerHits.add("hits", allHits);
         results.add("hits", outerHits);
-
+        System.out.println("total added: " + numCumulativeHits + " records. ");
         return results;
     }
 
