@@ -477,6 +477,7 @@ public class ESService {
     public List<Map<String, Object>> collectScrollPage(JsonArray searchHits, String[][] properties, int pageSize, int offset) throws IOException {
         List<Map<String, Object>> data = new ArrayList<>();
 
+        System.out.println("total processing size: " + searchHits.size() + " rows. ");
         //JsonArray searchHits = jsonObject.getAsJsonObject("hits").getAsJsonArray("hits");
         for (int i = 0; i < searchHits.size(); i++) {
             // skip offset number of documents
@@ -491,7 +492,7 @@ public class ESService {
                 row.put(propName, getValue(element));
             }
             data.add(row);
-            // System.out.println("total hashmap size: " + data.size() + " rows. ");
+            System.out.println("total hashmap size: " + data.size() + " rows. ");
             if (data.size() >= pageSize) {
                 break;
             }
