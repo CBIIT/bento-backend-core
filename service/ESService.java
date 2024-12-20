@@ -357,8 +357,10 @@ public class ESService {
         String jsonizedQuery = gson.toJson(query);
         request.setJsonEntity(jsonizedQuery);
         request.addParameter("scroll", "1m");
+        // JsonObject page = rollToPage(request, pageSize, offset);
+        // return collectPage(page, properties, pageSize, offset % SCROLL_SIZE);
         JsonObject page = rollToPage(request, pageSize, offset);
-        return collectPage(page, properties, pageSize, offset % SCROLL_SIZE);
+        return collectScrollPage(page, properties, pageSize, offset % SCROLL_SIZE);
     }
 
     /**
@@ -369,11 +371,11 @@ public class ESService {
      * @return
      * @throws IOException
      */
-    private JsonObject rollToPage(Request request, int pageSize, int offset) throws IOException {
+    private JsonArray rollToPage(Request request, int pageSize, int offset) throws IOException {
         // Variables involved with the return object
         JsonArray allHits = new JsonArray(); // All the hits gathered so far
-        JsonObject outerHits = new JsonObject(); // Helper JSON object for the results
-        JsonObject results = new JsonObject(); // The results to return
+        // JsonObject outerHits = new JsonObject(); // Helper JSON object for the results
+        // JsonObject results = new JsonObject(); // The results to return
 
         // Variables used for scrolling
         Request clearScrollRequest = new Request("DELETE", SCROLL_ENDPOINT);
@@ -422,10 +424,10 @@ public class ESService {
         }
 
         // Format the return object
-        outerHits.add("hits", allHits);
-        results.add("hits", outerHits);
+        // outerHits.add("hits", allHits);
+        // results.add("hits", outerHits);
         System.out.println("total added: " + numCumulativeHits + " records. ");
-        return results;
+        return allHits;
     }
 
     // Collect a page of data, result will be of pageSize or less if not enough data remains
@@ -469,6 +471,32 @@ public class ESService {
                 break;
             }
         }
+        return data;
+    }
+
+    public List<Map<String, Object>> collectScrollPage(JsonArray searchHits, String[][] properties, String[][] highlights, int pageSize, int offset) throws IOException {
+        List<Map<String, Object>> data = new ArrayList<>();
+
+        //JsonArray searchHits = jsonObject.getAsJsonObject("hits").getAsJsonArray("hits");
+        for (int i = 0; i < searchHits.size(); i++) {
+            // skip offset number of documents
+            if (i + 1 <= offset) {
+                continue;
+            }
+            Map<String, Object> row = new HashMap<>();
+            for (String[] prop: properties) {
+                String propName = prop[0];
+                String dataField = prop[1];
+                JsonElement element = searchHits.get(i).getAsJsonObject().get("_source").getAsJsonObject().get(dataField);
+                row.put(propName, getValue(element));
+            }
+            data.add(row);
+            // System.out.println("total hashmap size: " + data.size() + " rows. ");
+            if (data.size() >= pageSize) {
+                break;
+            }
+        }
+        System.out.println("total hashmap size: " + searchHits.size() + " rows. ");
         return data;
     }
 
