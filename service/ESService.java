@@ -464,6 +464,7 @@ public class ESService {
                 }
             }
             data.add(row);
+            System.out.println("total hashmap size: " + data.size() + " rows. ");
             if (data.size() >= pageSize) {
                 break;
             }
