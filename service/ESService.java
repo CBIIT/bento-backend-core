@@ -491,13 +491,16 @@ public class ESService {
                 JsonElement element = searchHits.get(i).getAsJsonObject().get("_source").getAsJsonObject().get(dataField);
                 row.put(propName, getValue(element));
             }
-            data.add(row);
-            System.out.println("total hashmap size: " + data.size() + " rows. ");
+            try {
+                data.add(row);
+                System.out.println("total hashmap size: " + data.size() + " rows. ");
+            } catch (OutOfMemoryError e) {
+                System.err.println("Out of memory error: " + e.getMessage());
+            }
             if (data.size() >= pageSize) {
                 break;
             }
         }
-        System.out.println("total hashmap size: " + searchHits.size() + " rows. ");
         return data;
     }
 
