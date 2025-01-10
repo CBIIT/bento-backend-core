@@ -10,8 +10,9 @@ import org.opensearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.opensearch.search.sort.SortOrder;
 
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
+import static gov.nih.nci.bento.utility.StrUtil.getBoolText;
+import static gov.nih.nci.bento.utility.StrUtil.getIntText;
 
 public class GlobalQueryFilter {
 
@@ -89,8 +90,8 @@ public class GlobalQueryFilter {
         if (query.getFilter().getTypedSearch() == null) return new ArrayList<>();
         List<QueryBuilder> conditionalList = new ArrayList<>();
         List<YamlGlobalFilterType.GlobalQuerySet> typeQuerySets = query.getFilter().getTypedSearch() ;
-        String filterString = "";
         for (YamlGlobalFilterType.GlobalQuerySet option : typeQuerySets) {
+            String filterString = "";
             if (option.getOption().equals(Const.YAML_QUERY.QUERY_TERMS.BOOLEAN)) {
                 filterString = (getBoolText(param.getSearchText()));
             } else if (option.getOption().equals(Const.YAML_QUERY.QUERY_TERMS.INTEGER)) {
@@ -117,24 +118,5 @@ public class GlobalQueryFilter {
             if (highlightBuilder.fragmentSize() != null) highlightBuilder.fragmentSize(yamlHighlight.getFragmentSize());
             builder.highlighter(highlightBuilder);
         }
-    }
-
-    private static String getBoolText(String text) {
-        String strPattern = "(?i)(\\bfalse\\b|\\btrue\\b)";
-        return getStr(strPattern, text).toLowerCase();
-    }
-
-    private static String getIntText(String text) {
-        String strPattern = "(\\b[0-9]+\\b)";
-        return getStr(strPattern, text);
-    }
-
-    private static String getStr(String strPattern, String text) {
-        String str = Optional.ofNullable(text).orElse("");
-        Pattern pattern = Pattern.compile(strPattern);
-        Matcher matcher = pattern.matcher(str);
-        String result = "";
-        if (matcher.find()) result = matcher.group(1);
-        return result;
     }
 }
