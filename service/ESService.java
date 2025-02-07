@@ -310,17 +310,17 @@ public class ESService {
         return jsonObject.get("hits").getAsJsonObject().get("total").getAsJsonObject().get("value").getAsInt();
     }
 
-    public List<Map<String, Object>> collectPage(Map<String, Object> params, String endpoint, Map<String, Object> properties) throws IOException {
+    public List<Map<String, Object>> collectPage(Map<String, Object> params, String endpoint, List<Map<String, Object>> properties) throws IOException {
         Map<String, Object> query = buildListQuery(params, Set.of(),false);
         Request request = new Request("GET", endpoint);
         return collectPage(request, query, properties);
     }
 
-    public List<Map<String, Object>> collectPage(Request request, Map<String, Object> query, Map<String, Object> properties) throws IOException {
+    public List<Map<String, Object>> collectPage(Request request, Map<String, Object> query, List<Map<String, Object>> properties) throws IOException {
         return collectPage(request, query, properties, ESService.MAX_ES_SIZE, 0);
     }
 
-    public List<Map<String, Object>> collectPage(Request request, Map<String, Object> query, Map<String, Object> properties, int pageSize, int offset) throws IOException {
+    public List<Map<String, Object>> collectPage(Request request, Map<String, Object> query, List<Map<String, Object>> properties, int pageSize, int offset) throws IOException {
         // Make sure page size is less than max allowed size
         if (pageSize > MAX_ES_SIZE) {
             throw new IOException("Parameter 'first' must not exceeded " + MAX_ES_SIZE);
@@ -352,7 +352,7 @@ public class ESService {
      * @throws IOException
      */
     private List<Map<String, Object>> collectPageWithScroll(
-            Request request, Map<String, Object> query, Map<String, Object> properties, int pageSize, int offset) throws IOException {
+            Request request, Map<String, Object> query, List<Map<String, Object>> properties, int pageSize, int offset) throws IOException {
         query.put("size", SCROLL_SIZE);
         String jsonizedQuery = gson.toJson(query);
         request.setJsonEntity(jsonizedQuery);
@@ -428,15 +428,25 @@ public class ESService {
     }
 
     // Collect a page of data, result will be of pageSize or less if not enough data remains
-    public List<Map<String, Object>> collectPage(JsonObject jsonObject, Map<String, Object> properties, int pageSize) throws IOException {
+    public List<Map<String, Object>> collectPage(JsonObject jsonObject, List<Map<String, Object>> properties, int pageSize) throws IOException {
         return collectPage(jsonObject, properties, pageSize, 0);
     }
 
-    private List<Map<String, Object>> collectPage(JsonObject jsonObject, Map<String, Object> properties, int pageSize, int offset) throws IOException {
+    private List<Map<String, Object>> collectPage(JsonObject jsonObject, List<Map<String, Object>> properties, int pageSize, int offset) throws IOException {
         return collectPage(jsonObject, properties, null, pageSize, offset);
     }
 
-    public List<Map<String, Object>> collectPage(JsonObject jsonObject, Map<String, Object> properties, String[][] highlights, int pageSize, int offset) throws IOException {
+    /**
+     * Transforms Opensearch results to a desired mapping
+     * @param jsonObject The Opensearch results
+     * @param properties The desired mapping of GraphQL properties to Opensearch properties
+     * @param highlights A mapping of properties whose results need to be formatted for highlighting
+     * @param pageSize The maximum number of results to return
+     * @param offset How many results to skip at first
+     * @return
+     * @throws IOException
+     */
+    public List<Map<String, Object>> collectPage(JsonObject jsonObject, List<Map<String, Object>> properties, String[][] highlights, int pageSize, int offset) throws IOException {
         List<Map<String, Object>> data = new ArrayList<>();
 
         JsonArray searchHits = jsonObject.getAsJsonObject("hits").getAsJsonArray("hits");
@@ -445,26 +455,21 @@ public class ESService {
             if (i + 1 <= offset) {
                 continue;
             }
-            Map<String, Object> row = new HashMap<>();
-            for (Map.Entry<String, Object> prop: properties.entrySet()) {
-                String propNameGql = prop.getKey(); // Name of the property in GraphQL
-                Object propNameOs = prop.getValue(); // Mapping of the property's name in Opensearch document
 
-                if (propNameOs instanceof String) {
-                    String propName = (String) propNameOs; // Name of the property in Opensearch document
-                    JsonElement element = searchHits.get(i).getAsJsonObject().get("_source").getAsJsonObject().get(propName);
+            Map<String, Object> row = new HashMap<>();
+            for (Map<String, Object> prop: properties) {
+                List<Map<String, String>> nestedProps = prop.containsKey("nested") ? (List<Map<String, String>>) prop.get("nested") : null; // Mapping of nested property names
+                String propNameGql = (String) prop.get("gqlName"); // Name of the property in GraphQL
+                String propNameOs = (String) prop.get("osName"); // Name of the property in Opensearch document
+                JsonElement element = searchHits.get(i).getAsJsonObject().get("_source").getAsJsonObject().get(propNameOs);
+
+                if (nestedProps == null) {
                     row.put(propNameGql, getValue(element));
-                } else if (propNameOs instanceof Map) {
-                    Map<String, String> propNameNested = (Map<String, String>) propNameOs; // Mapping for nested document's property names
-                    String propName = (String) propNameNested.get(".."); // Name of the property in Opensearch document
-                    JsonElement element = searchHits.get(i).getAsJsonObject().get("_source").getAsJsonObject().get(propName);
-                    row.put(propNameGql, getValue(element, propNameNested));
                 } else {
-                    String msg = "Property is mapped to neither a String nor a Map<String, String>";
-                    logger.error(msg);
-                    throw new IOException(msg);
+                    row.put(propNameGql, getValue(element, nestedProps));
                 }
             }
+
             if (highlights != null) {
                 for (String[] highlight: highlights) {
                     String hlName = highlight[0];
@@ -475,7 +480,9 @@ public class ESService {
                     }
                 }
             }
+
             data.add(row);
+
             if (data.size() >= pageSize) {
                 break;
             }
@@ -516,18 +523,29 @@ public class ESService {
         return getValue(element, null);
     }
 
-    // Convert JsonElement into Java collections and primitives
-    private Object getValue(JsonElement element, Map<String, String> propNames) {
+    /**
+     * Convert JsonElement into Java collections and primitives
+     * @param element The JsonElement to transform
+     * @param propNames Property name mapping for the JsonElement
+     * @return
+     */
+    private Object getValue(JsonElement element, List<Map<String, String>> propNames) {
         Object value = null;
         if (element == null || element.isJsonNull()) {
             return null;
-        } else if (element.isJsonObject()) {
+        }
+
+        if (element.isJsonObject()) {
             value = new HashMap<String, Object>();
             JsonObject object = element.getAsJsonObject();
-            for (String key: object.keySet()) {
-                if (propNames != null) {
-                    ((Map<String, Object>) value).put(key, getValue(object.get(propNames.get(key))));
-                } else {
+            if (propNames != null) { // Nested properties need to be renamed
+                for (Map<String, String> propMap: propNames) {
+                    String gqlName = propMap.get("gqlName");
+                    String osName = propMap.get("osName");
+                    ((Map<String, Object>) value).put(gqlName, getValue(object.get(osName)));
+                }
+            } else { // Nested properties don't need to be renamed
+                for (String key: object.keySet()) {
                     ((Map<String, Object>) value).put(key, getValue(object.get(key)));
                 }
             }
