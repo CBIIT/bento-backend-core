@@ -76,9 +76,10 @@ public class QueryFactory {
     private QueryBuilder getCaseInsensitiveQuery(List<String> list, String key) {
         BoolQueryBuilder bool = new BoolQueryBuilder();
         list.forEach(value->
-                bool.should(
-                        QueryBuilders.wildcardQuery(key, value).caseInsensitive(true)
-                )
+                    bool.should(QueryBuilders.termQuery(key, value))
+                        .should(QueryBuilders.termQuery(key, value.toLowerCase()))
+                        .should(QueryBuilders.termQuery(key, value.toUpperCase()))
+                .minimumShouldMatch(1)
         );
         return bool;
     }
