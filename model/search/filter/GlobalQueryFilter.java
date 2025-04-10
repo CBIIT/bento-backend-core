@@ -41,10 +41,7 @@ public class GlobalQueryFilter {
             if ("ASC".equalsIgnoreCase(sortDirection)){
                 builder.sort(query.getFilter().getDefaultSortField(), SortOrder.ASC);
             }
-            else if ("DESC".equalsIgnoreCase(sortDirection)){
-                builder.sort(query.getFilter().getDefaultSortField(), SortOrder.DESC);
-            }
-            else{
+            else {
                 builder.sort(query.getFilter().getDefaultSortField(), SortOrder.DESC);
             }
         }
