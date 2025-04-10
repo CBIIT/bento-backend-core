@@ -36,16 +36,19 @@ public class GlobalQueryFilter {
                                 createGlobalConditionalQueries(param, query))
                 );
         // Set Sort
-        if ("ASC".equalsIgnoreCase(query.getFilter().getSortDirection())){
-            if (query.getFilter().getDefaultSortField() !=null) builder.sort(query.getFilter().getDefaultSortField(), SortOrder.ASC);
+        if (query.getFilter().getDefaultSortField() !=null){
+            String sortDirection = query.getFilter().getSortDirection();
+            if ("ASC".equalsIgnoreCase(sortDirection)){
+                builder.sort(query.getFilter().getDefaultSortField(), SortOrder.ASC);
+            }
+            else if ("DESC".equalsIgnoreCase(sortDirection)){
+                builder.sort(query.getFilter().getDefaultSortField(), SortOrder.DESC);
+            }
+            else{
+                builder.sort(query.getFilter().getDefaultSortField(), SortOrder.DESC);
+            }
         }
-        else if ("DESC".equalsIgnoreCase(query.getFilter().getSortDirection())){
-            if (query.getFilter().getDefaultSortField() !=null) builder.sort(query.getFilter().getDefaultSortField(), SortOrder.DESC);
-        }
-        else{
-            if (query.getFilter().getDefaultSortField() !=null) builder.sort(query.getFilter().getDefaultSortField(), SortOrder.DESC);
-        }
-        // Set Highlight Query
+            // Set Highlight Query
         setGlobalHighlightQuery(query, builder);
         return builder;
     }
