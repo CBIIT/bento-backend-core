@@ -40,7 +40,7 @@ public class GlobalQueryFilter {
       
 
         String defaultSortField = query.getFilter().getDefaultSortField();
-        if (query.getFilter().getDefaultSortField() !=null){
+        if (defaultSortField !=null){
             String sortDirection = query.getFilter().getSortDirection();
             SortOrder order = "ASC".equalsIgnoreCase(sortDirection) ? SortOrder.ASC : SortOrder.DESC;
             builder.sort(defaultSortField, order);
