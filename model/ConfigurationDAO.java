@@ -29,6 +29,8 @@ public class ConfigurationDAO implements ApplicationContextAware {
 	@Value("${bento.api.version:version not set}")
 	private String bentoApiVersion;
 
+	@Value("${graphql.memgraph_schema:}")
+	private String memgraphSchemaFile;
 	@Value("${graphql.es_schema:}")
 	private String esSchemaFile;
 
@@ -55,6 +57,16 @@ public class ConfigurationDAO implements ApplicationContextAware {
 	@Value("${es.region:}")
 	private String region;
 
+	@Value("${memgraph.url:}")
+	private String memgraphUrl;
+
+	@Value("${memgraph.username:}")
+	private String memgraphUsername;
+
+	@Value("${memgraph.password:}")
+	private String memgraphPassword;
+
+
 	//Query Limits
 	@Value("${validations.max_page_size:10000}")
 	private int maxPageSize;
@@ -64,6 +76,10 @@ public class ConfigurationDAO implements ApplicationContextAware {
 		boolean abortInitialization = false;
 		if(this.esFilterEnabled && (this.esHost.isBlank() || this.esPort == -1)){
 			logger.error("Please specify an OpenSearch host and port");
+			abortInitialization = true;
+		}
+		if(this.memgraphUrl.isBlank() || this.memgraphUsername.isBlank() || this.memgraphPassword.isBlank()){
+			logger.error("Please provide all Memgraph connection variables");
 			abortInitialization = true;
 		}
 		if (abortInitialization) {
