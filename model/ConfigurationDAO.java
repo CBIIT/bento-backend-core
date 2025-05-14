@@ -29,8 +29,6 @@ public class ConfigurationDAO implements ApplicationContextAware {
 	@Value("${bento.api.version:version not set}")
 	private String bentoApiVersion;
 
-	@Value("${graphql.memgraph_schema:}")
-	private String memgraphSchemaFile;
 	@Value("${graphql.es_schema:}")
 	private String esSchemaFile;
 

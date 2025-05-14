@@ -39,8 +39,6 @@ public abstract class AbstractESDataFetcher {
         this.gson = new GsonBuilder().serializeNulls().create();
     }
 
-    // abstract methods
-    public abstract RuntimeWiring buildRuntimeWiring() throws IOException;
 
     protected int getNodeCount(String countEndpoint) throws IOException {
         Request countRequest = new Request("GET", countEndpoint);
