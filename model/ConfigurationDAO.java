@@ -13,7 +13,6 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.core.annotation.Order;
 
 /**
  * The Configuration Bean, reads configuration setting from classpath:application.properties.
@@ -29,8 +28,8 @@ public class ConfigurationDAO implements ApplicationContextAware {
 	@Value("${bento.api.version:version not set}")
 	private String bentoApiVersion;
 
-	@Value("${graphql.es_schema:}")
-	private String esSchemaFile;
+	@Value("${graphql.schema:}")
+	private String schemaFile;
 
 	//Operation Type Enable
 	@Value("${allow_graphql_query:true}")
@@ -55,15 +54,17 @@ public class ConfigurationDAO implements ApplicationContextAware {
 	@Value("${es.region:}")
 	private String region;
 
-	@Value("${memgraph.url:}")
-	private String memgraphUrl;
+	@Value("${memgraph.endpoint}")
+	private String memgraphEndpoint;
+
+	@Value("${memgraph.port}")
+	private String memgraphPort;
 
 	@Value("${memgraph.username:}")
 	private String memgraphUsername;
 
 	@Value("${memgraph.password:}")
 	private String memgraphPassword;
-
 
 	//Query Limits
 	@Value("${validations.max_page_size:10000}")
@@ -76,7 +77,7 @@ public class ConfigurationDAO implements ApplicationContextAware {
 			logger.error("Please specify an OpenSearch host and port");
 			abortInitialization = true;
 		}
-		if(this.memgraphUrl.isBlank() || this.memgraphUsername.isBlank() || this.memgraphPassword.isBlank()){
+		if(this.memgraphEndpoint.isBlank() || this.memgraphPort.isBlank() || this.memgraphUsername.isBlank() || this.memgraphPassword.isBlank()){
 			logger.error("Please provide all Memgraph connection variables");
 			abortInitialization = true;
 		}

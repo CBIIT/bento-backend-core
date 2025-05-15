@@ -17,12 +17,12 @@ import org.springframework.stereotype.Component;
 import java.io.File;
 import java.io.IOException;
 
+@Getter
 @Component
 public class BentoGraphQL {
 
     private static final Logger logger = LogManager.getLogger(BentoGraphQL.class);
 
-    @Getter
     private final GraphQL privateGraphQL;
 
     public BentoGraphQL(
@@ -31,7 +31,7 @@ public class BentoGraphQL {
         GeneralCommonsRuntimeWiring generalCommonsRuntimeWiring,
         PageSizeLimitInstrumentation pageSizeLimitInstrumentation
     ) throws IOException {
-        File schemaFile = new DefaultResourceLoader().getResource("classpath:" + config.getEsSchemaFile()).getFile();
+        File schemaFile = new DefaultResourceLoader().getResource("classpath:" + config.getSchemaFile()).getFile();
         TypeDefinitionRegistry schemaParser = new SchemaParser().parse(schemaFile);
         GraphQLSchema esSchema = new SchemaGenerator().makeExecutableSchema(schemaParser, generalCommonsRuntimeWiring.getRuntimeWiring());
         this.privateGraphQL = GraphQL.newGraphQL(esSchema).instrumentation(pageSizeLimitInstrumentation).build();
