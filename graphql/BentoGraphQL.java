@@ -2,7 +2,6 @@ package gov.nih.nci.bento.graphql;
 
 import gov.nih.nci.bento.model.ConfigurationDAO;
 import gov.nih.nci.bento_ri.model.GeneralCommonsRuntimeWiring;
-import gov.nih.nci.bento_ri.model.PrivateESDataFetcher;
 import graphql.GraphQL;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.SchemaGenerator;
@@ -27,7 +26,6 @@ public class BentoGraphQL {
 
     public BentoGraphQL(
         ConfigurationDAO config,
-        PrivateESDataFetcher privateESDataFetcher,
         GeneralCommonsRuntimeWiring generalCommonsRuntimeWiring,
         PageSizeLimitInstrumentation pageSizeLimitInstrumentation
     ) throws IOException {
