@@ -32,9 +32,9 @@ public class ConfigurationDAO implements ApplicationContextAware {
 	private String schemaFile;
 
 	//Operation Type Enable
-	@Value("${allow_graphql_query:true}")
+	@Value("${allow.graphql.query:true}")
 	private boolean allowGraphQLQuery;
-	@Value("${allow_graphql_mutation:false}")
+	@Value("${allow.graphql.mutation:false}")
 	private boolean allowGraphQLMutation;
 
 	//Elasticsearch Configuration
@@ -49,7 +49,7 @@ public class ConfigurationDAO implements ApplicationContextAware {
 	@Value("${es.sign.requests:true}")
 	private boolean esSignRequests;
 
-	@Value("${es.service_name:}")
+	@Value("${es.service.name:}")
 	private String serviceName;
 	@Value("${es.region:}")
 	private String region;
@@ -60,7 +60,7 @@ public class ConfigurationDAO implements ApplicationContextAware {
 	@Value("${memgraph.port}")
 	private String memgraphPort;
 
-	@Value("${memgraph.username:}")
+	@Value("${memgraph.user:}")
 	private String memgraphUsername;
 
 	@Value("${memgraph.password:}")
