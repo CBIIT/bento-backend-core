@@ -44,7 +44,7 @@ public class ConfigurationDAO implements ApplicationContextAware {
 	private int esPort;
 	@Value("${es.scheme:http}")
 	private String esScheme;
-	@Value(("${es.filter.enabled:false}"))
+	@Value("${es.filter.enabled:false}")
 	private boolean esFilterEnabled;
 	@Value("${es.sign.requests:true}")
 	private boolean esSignRequests;
