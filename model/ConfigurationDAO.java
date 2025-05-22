@@ -30,6 +30,8 @@ public class ConfigurationDAO implements ApplicationContextAware {
 
 	@Value("${graphql.schema:}")
 	private String schemaFile;
+	@Value("${docs.schema:}")
+	private String schemaDoc;
 
 	//Operation Type Enable
 	@Value("${allow.graphql.query:true}")
