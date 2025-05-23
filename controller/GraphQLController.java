@@ -72,11 +72,11 @@ public class GraphQLController {
 	}
 
 	@CrossOrigin
-	@RequestMapping(value = {"/v1/graphql/"}, method = {RequestMethod.GET, RequestMethod.HEAD,
+	@RequestMapping(value = {"/v1/graphql/"}, method = {RequestMethod.HEAD,
 			RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.TRACE, RequestMethod.OPTIONS, RequestMethod.PATCH},
 			produces = MediaType.APPLICATION_JSON_VALUE + "; charset=utf-8")
 	public ResponseEntity<String> getPrivateGraphQLResponseByGET() {
-		return logAndReturnError(HttpStatus.METHOD_NOT_ALLOWED, "API will only accept POST requests");
+		return logAndReturnError(HttpStatus.METHOD_NOT_ALLOWED, "API will only accept POST and GET requests");
 	}
 
 	@CrossOrigin
