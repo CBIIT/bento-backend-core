@@ -5,95 +5,75 @@ import java.util.Map;
 
 public class TypeChecker {
     /**
-     * Checks whether the provided object is a List of Maps with String keys and Object values.
+     * A generalized type checking method that can verify various collection types and their nested elements.
      *
-     * @param obj the object to check
-     * @return true if obj is a List<Map<String, Object>>, false otherwise
+     * @param obj The object to check
+     * @param containerType The expected container type (e.g., List.class, Map.class)
+     * @param elementTypes The expected element types in order:
+     *                     - For List<E>: pass the element type
+     *                     - For Map<K,V>: pass key type then value type, or Object.class for any type
+     * @return true if the object matches the expected types, false otherwise
      */
-    public static boolean isListOfMapStringObject(Object obj) {
-        if (!(obj instanceof List<?> list)) {
+    public static boolean isOfType(Object obj, Class<?> containerType, Class<?>... elementTypes) {
+        if (obj == null || !containerType.isInstance(obj)) {
             return false;
         }
 
-        for (Object item : list) {
-            if (!isMapStringObject(item)) {
-                return false;
+        if (List.class.isAssignableFrom(containerType)) {
+            if (elementTypes.length != 1) {
+                throw new IllegalArgumentException("List requires exactly one element type");
             }
-        }
-
-        return true;
-    }
-
-    /**
-     * Checks whether the provided object is a List of Strings.
-     *
-     * @param obj the object to check
-     * @param type the class of the type to check against
-     * @param <T> the type of the list elements
-     * @return true if obj is a List<T>, false otherwise
-     */
-    public static <T> boolean isListOfType(Object obj, Class<T> type) {
-        if (!(obj instanceof List<?> list)) {
-            return false;
-        }
-
-        for (Object item : list) {
-            if (!type.isInstance(item)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Checks whether the provided object is a Map with String keys and Lists of Strings as values.
-     *
-     * @param obj the object to check
-     * @param type the class of the type to check against
-     * @param <T> the type of the list elements
-     * @return true if obj is a Map<String, List<T>>, false otherwise
-     */
-    public static <T> boolean isMapStringListOfType(Object obj, Class<T> type) {
-        if (!(obj instanceof Map<?, ?> map)) return false;
-
-        for (Map.Entry<?, ?> entry : map.entrySet()) {
-            if (!(entry.getKey() instanceof String)) {
-                return false;
-            }
-
-            Object value = entry.getValue();
-            if (!(value instanceof List<?> list)) {
-                return false;
-            }
-
+            List<?> list = (List<?>) obj;
             for (Object item : list) {
-                if (!type.isInstance(item)) {
+                if (Map.class.isAssignableFrom(elementTypes[0])) {
+                    // Handle nested Map type
+                    if (!Map.class.isInstance(item)) {
+                        return false;
+                    }
+                    Map<?, ?> mapItem = (Map<?, ?>) item;
+                    for (Map.Entry<?, ?> entry : mapItem.entrySet()) {
+                        if (!(entry.getKey() instanceof String)) {
+                            return false;
+                        }
+                    }
+                } else if (!elementTypes[0].isInstance(item)) {
                     return false;
                 }
             }
+            return true;
         }
 
-        return true;
-    }
-
-    /**
-     * Checks whether the provided object is a Map with String keys and Object values.
-     *
-     * @param obj the object to check
-     * @return true if obj is a Map<String, Object>, false otherwise
-     */
-    public static boolean isMapStringObject(Object obj) {
-        if (!(obj instanceof Map<?, ?> map)) {
-            return false;
-        }
-
-        for (Map.Entry<?, ?> entry : map.entrySet()) {
-            if (!(entry.getKey() instanceof String)) {
-                return false;
+        if (Map.class.isAssignableFrom(containerType)) {
+            if (elementTypes.length != 2) {
+                throw new IllegalArgumentException("Map requires exactly two element types (key and value)");
             }
-            // We accept any value since it's Map<String, Object>
+            Map<?, ?> map = (Map<?, ?>) obj;
+            for (Map.Entry<?, ?> entry : map.entrySet()) {
+                if (!elementTypes[0].isInstance(entry.getKey())) {
+                    return false;
+                }
+                
+                Object value = entry.getValue();
+                if (List.class.isAssignableFrom(elementTypes[1])) {
+                    // Handle Map with List values
+                    if (!(value instanceof List<?>)) {
+                        return false;
+                    }
+                    // For Map<String, List<T>>, we assume the third type parameter is the list element type
+                    if (elementTypes.length > 2) {
+                        for (Object listItem : (List<?>) value) {
+                            if (!elementTypes[2].isInstance(listItem)) {
+                                return false;
+                            }
+                        }
+                    }
+                } else if (!elementTypes[1].isInstance(value)) {
+                    return false;
+                }
+            }
+            return true;
         }
 
-        return true;
+        throw new IllegalArgumentException("Unsupported container type: " + containerType.getName());
     }
 }
