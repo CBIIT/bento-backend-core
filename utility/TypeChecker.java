@@ -1,79 +1,69 @@
 package gov.nih.nci.bento.utility;
 
+import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
 
+import com.google.common.reflect.TypeToken;
+
 public class TypeChecker {
+
     /**
-     * A generalized type checking method that can verify various collection types and their nested elements.
-     *
+     * Checks if the given object is of the specified type.
+     * This method uses Guava's TypeToken to handle generic types and collections.
      * @param obj The object to check
-     * @param containerType The expected container type (e.g., List.class, Map.class)
-     * @param elementTypes The expected element types in order:
-     *                     - For List<E>: pass the element type
-     *                     - For Map<K,V>: pass key type then value type, or Object.class for any type
-     * @return true if the object matches the expected types, false otherwise
+     * @param typeToken<T> A TypeToken representing the expected type
+     * @return
      */
-    public static boolean isOfType(Object obj, Class<?> containerType, Class<?>... elementTypes) {
-        if (obj == null || !containerType.isInstance(obj)) {
+    public static <T> boolean isOfType(Object obj, TypeToken<T> typeToken) {
+        if (obj == null) {
             return false;
         }
 
-        if (List.class.isAssignableFrom(containerType)) {
-            if (elementTypes.length != 1) {
-                throw new IllegalArgumentException("List requires exactly one element type");
-            }
-            List<?> list = (List<?>) obj;
-            for (Object item : list) {
-                if (Map.class.isAssignableFrom(elementTypes[0])) {
-                    // Handle nested Map type
-                    if (!Map.class.isInstance(item)) {
+        return matches(obj, typeToken.getType());
+    }
+
+    /**
+     * Recursively checks if the object matches the expected type.
+     * Helper method for isOfType.
+     * @param obj The object to check
+     * @param type A Type representing the expected type
+     * @return true if the object matches the type, false otherwise
+     */
+    private static boolean matches(Object obj, Type type) {
+        TypeToken<?> expectedType = TypeToken.of(type);
+
+        if (expectedType.getRawType().isAssignableFrom(obj.getClass())) {
+            // Check for known container types with generic params
+            if (expectedType.isSubtypeOf(new TypeToken<List<?>>() {})) {
+                List<?> list = (List<?>) obj;
+                TypeToken<?> itemType = expectedType.resolveType(List.class.getTypeParameters()[0]);
+
+                for (Object item : list) {
+                    if (!matches(item, itemType.getType())) {
                         return false;
                     }
-                    Map<?, ?> mapItem = (Map<?, ?>) item;
-                    for (Map.Entry<?, ?> entry : mapItem.entrySet()) {
-                        if (!(entry.getKey() instanceof String)) {
-                            return false;
-                        }
-                    }
-                } else if (!elementTypes[0].isInstance(item)) {
-                    return false;
                 }
-            }
-            return true;
-        }
 
-        if (Map.class.isAssignableFrom(containerType)) {
-            if (elementTypes.length != 2) {
-                throw new IllegalArgumentException("Map requires exactly two element types (key and value)");
-            }
-            Map<?, ?> map = (Map<?, ?>) obj;
-            for (Map.Entry<?, ?> entry : map.entrySet()) {
-                if (!elementTypes[0].isInstance(entry.getKey())) {
-                    return false;
-                }
-                
-                Object value = entry.getValue();
-                if (List.class.isAssignableFrom(elementTypes[1])) {
-                    // Handle Map with List values
-                    if (!(value instanceof List<?>)) {
+                return true;
+            } else if (expectedType.isSubtypeOf(new TypeToken<Map<?, ?>>() {})) {
+                Map<?, ?> map = (Map<?, ?>) obj;
+                TypeToken<?> keyType = expectedType.resolveType(Map.class.getTypeParameters()[0]);
+                TypeToken<?> valueType = expectedType.resolveType(Map.class.getTypeParameters()[1]);
+
+                for (Map.Entry<?, ?> entry : map.entrySet()) {
+                    if (!matches(entry.getKey(), keyType.getType()) || !matches(entry.getValue(), valueType.getType())) {
                         return false;
                     }
-                    // For Map<String, List<T>>, we assume the third type parameter is the list element type
-                    if (elementTypes.length > 2) {
-                        for (Object listItem : (List<?>) value) {
-                            if (!elementTypes[2].isInstance(listItem)) {
-                                return false;
-                            }
-                        }
-                    }
-                } else if (!elementTypes[1].isInstance(value)) {
-                    return false;
                 }
+
+                return true;
+            } else {
+                // Not a container with generic types, just check base class
+                return true;
             }
-            return true;
         }
 
-        throw new IllegalArgumentException("Unsupported container type: " + containerType.getName());
+        return false;
     }
 }
