@@ -7,7 +7,6 @@ import java.util.Map;
 import com.google.common.reflect.TypeToken;
 
 public class TypeChecker {
-
     /**
      * Checks if the given object is of the specified type.
      * This method uses Guava's TypeToken to handle generic types and collections.
