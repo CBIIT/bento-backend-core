@@ -14,6 +14,7 @@ import org.apache.logging.log4j.Logger;
 import org.opensearch.action.search.SearchRequest;
 import org.springframework.core.io.ClassPathResource;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.constructor.Constructor;
 
 import java.io.IOException;
@@ -40,7 +41,7 @@ public class GroupTypeYaml extends AbstractYamlType {
 
     private List<GroupTypeQuery.Group> readYamlFile(ClassPathResource resource) throws IOException {
         logger.info(String.format("%s Yaml group file query loading...", accessType.toString()));
-        Yaml groupYaml = new Yaml(new Constructor(GroupTypeQuery.class));
+    Yaml groupYaml = new Yaml(new Constructor(GroupTypeQuery.class, new LoaderOptions()));
         GroupTypeQuery groupTypeQuery = groupYaml.load(resource.getInputStream());
         setGlobalRangeFields(groupTypeQuery);
         return groupTypeQuery.getQueries();
