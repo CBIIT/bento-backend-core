@@ -1,11 +1,5 @@
 package gov.nih.nci.bento;
 
-import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
-
-public class ServletInitializer extends SpringBootServletInitializer {
-	@Override
-	protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
-		return application.sources(BentoApplication.class);
-	}
-}
+// Deprecated: was duplicating SpringBootServletInitializer causing duplicate filter registration in Boot 3 / Tomcat 11 container mode.
+// Keeping empty file temporarily to avoid compilation references; class intentionally removed.
+// (If no other code refers to ServletInitializer, this file can be deleted.)
