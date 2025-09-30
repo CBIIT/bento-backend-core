@@ -5,7 +5,7 @@ import gov.nih.nci.bento.model.search.query.QueryResult;
 import org.apache.lucene.search.TotalHits;
 import org.jetbrains.annotations.NotNull;
 import org.opensearch.action.search.SearchResponse;
-import org.opensearch.common.text.Text;
+import org.opensearch.core.common.text.Text;
 import org.opensearch.search.SearchHit;
 import org.opensearch.search.aggregations.Aggregation;
 import org.opensearch.search.aggregations.Aggregations;
