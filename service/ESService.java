@@ -447,21 +447,26 @@ public class ESService {
      * @throws IOException
      */
     public List<Map<String, Object>> collectPage(JsonObject jsonObject, List<Map<String, Object>> properties, String[][] highlights, int pageSize, int offset) throws IOException {
-        List<Map<String, Object>> data = new ArrayList<>();
+        // Pre-size the ArrayList to avoid resizing overhead, but not larger than needed
+        List<Map<String, Object>> data = new ArrayList<>(pageSize);
 
         JsonArray searchHits = jsonObject.getAsJsonObject("hits").getAsJsonArray("hits");
-        for (int i = 0; i < searchHits.size(); i++) {
-            // skip offset number of documents
-            if (i + 1 <= offset) {
-                continue;
-            }
+        int numHits = searchHits.size();
+        int collected = 0;
 
-            Map<String, Object> row = new HashMap<>();
-            for (Map<String, Object> prop: properties) {
-                List<Map<String, String>> nestedProps = prop.containsKey("nested") ? (List<Map<String, String>>) prop.get("nested") : null; // Mapping of nested property names
-                String propNameGql = (String) prop.get("gqlName"); // Name of the property in GraphQL
-                String propNameOs = (String) prop.get("osName"); // Name of the property in Opensearch document
-                JsonElement element = searchHits.get(i).getAsJsonObject().get("_source").getAsJsonObject().get(propNameOs);
+        // Start from the first hit after the offset, avoid iterating over skipped hits
+        for (int i = offset; i < numHits && collected < pageSize; i++) {
+            JsonObject hitObj = searchHits.get(i).getAsJsonObject();
+            JsonObject sourceObj = hitObj.getAsJsonObject("_source");
+
+            // Use a smaller initial capacity for the row map
+            Map<String, Object> row = new HashMap<>(Math.max(4, properties.size()));
+
+            for (Map<String, Object> prop : properties) {
+                List<Map<String, String>> nestedProps = prop.containsKey("nested") ? (List<Map<String, String>>) prop.get("nested") : null;
+                String propNameGql = (String) prop.get("gqlName");
+                String propNameOs = (String) prop.get("osName");
+                JsonElement element = sourceObj.get(propNameOs);
 
                 if (nestedProps == null) {
                     row.put(propNameGql, getValue(element));
@@ -471,22 +476,26 @@ public class ESService {
             }
 
             if (highlights != null) {
-                for (String[] highlight: highlights) {
-                    String hlName = highlight[0];
-                    String hlField = highlight[1];
-                    JsonElement element = searchHits.get(i).getAsJsonObject().get("highlight").getAsJsonObject().get(hlField);
-                    if (element != null) {
-                        row.put(hlName, ((List<String>)getValue(element)).get(0));
+                JsonObject highlightObj = hitObj.has("highlight") ? hitObj.getAsJsonObject("highlight") : null;
+                if (highlightObj != null) {
+                    for (String[] highlight : highlights) {
+                        String hlName = highlight[0];
+                        String hlField = highlight[1];
+                        JsonElement element = highlightObj.get(hlField);
+                        if (element != null) {
+                            Object val = getValue(element);
+                            if (val instanceof List && !((List<?>) val).isEmpty()) {
+                                row.put(hlName, ((List<?>) val).get(0));
+                            }
+                        }
                     }
                 }
             }
 
             data.add(row);
-
-            if (data.size() >= pageSize) {
-                break;
-            }
+            collected++;
         }
+
         return data;
     }
 
