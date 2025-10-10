@@ -7,7 +7,9 @@ import com.amazonaws.http.AWSRequestSigningApacheInterceptor;
 import gov.nih.nci.bento.model.ConfigurationDAO;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequestInterceptor;
+import org.apache.http.client.config.RequestConfig;
 import org.opensearch.client.RestClient;
+import org.opensearch.client.RestClientBuilder;
 import org.opensearch.client.RestHighLevelClient;
 
 public class AWSClient extends AbstractClient {
@@ -25,9 +27,14 @@ public class AWSClient extends AbstractClient {
         signer.setRegionName(config.getRegion());
         HttpRequestInterceptor interceptor = new AWSRequestSigningApacheInterceptor(config.getServiceName(), signer, credentialsProvider);
 
-        return new RestHighLevelClient(
-                RestClient.builder(
-                        new HttpHost(config.getEsHost().trim(), config.getEsPort(), config.getEsScheme())).setHttpClientConfigCallback(hacb -> hacb.addInterceptorLast(interceptor)));
+        RestClientBuilder builder = RestClient.builder(new HttpHost(config.getEsHost().trim(), config.getEsPort(), config.getEsScheme())).setHttpClientConfigCallback(hacb -> hacb.addInterceptorLast(interceptor))
+                // Per-connection/request defaults:
+                .setRequestConfigCallback((RequestConfig.Builder b) -> b
+                        .setConnectTimeout(5_000)              // TCP connect timeout
+                        .setConnectionRequestTimeout(5_000)    // wait for a connection from pool
+                        .setSocketTimeout(120_000));           // no-bytes-read timeout
+
+        return new RestHighLevelClient(builder);
     }
 
     @Override
@@ -36,6 +43,12 @@ public class AWSClient extends AbstractClient {
         signer.setServiceName(config.getServiceName());
         signer.setRegionName(config.getRegion());
         HttpRequestInterceptor interceptor = new AWSRequestSigningApacheInterceptor(config.getServiceName(), signer, credentialsProvider);
-        return RestClient.builder(new HttpHost(config.getEsHost().trim(), config.getEsPort(), config.getEsScheme())).setHttpClientConfigCallback(hacb -> hacb.addInterceptorLast(interceptor)).build();
+        return RestClient.builder(new HttpHost(config.getEsHost().trim(), config.getEsPort(), config.getEsScheme())).setHttpClientConfigCallback(hacb -> hacb.addInterceptorLast(interceptor))
+                // Per-connection/request defaults:
+                .setRequestConfigCallback((RequestConfig.Builder b) -> b
+                        .setConnectTimeout(5_000)              // TCP connect timeout
+                        .setConnectionRequestTimeout(5_000)    // wait for a connection from pool
+                        .setSocketTimeout(120_000))           // no-bytes-read timeout
+                .build();
     }
 }
