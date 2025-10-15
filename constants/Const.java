@@ -4,7 +4,7 @@ public class Const {
 
     public static class ES_UNITS {
         public static final int DEFAULT_SIZE = 10;
-        public static final int MAX_SIZE = 10000;
+        public static final int MAX_SIZE = 200000;
         public static final String GS_HIGHLIGHT_DELIMITER = "$";
         public static final String KEYWORD = ".keyword";
     }
@@ -18,7 +18,7 @@ public class Const {
 
         public static final String SORT_DIRECTION = "sort_direction";
         public static final String CASE_IDS = "case_ids";
-        public static final int AGGS_SIZE = 1000;
+        public static final int AGGS_SIZE = 200000;
         public static final String INPUT = "input";
         public static final String NESTED_FILTER = "FILTER_INFO";
     }
