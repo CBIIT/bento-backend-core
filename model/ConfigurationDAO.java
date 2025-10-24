@@ -83,6 +83,10 @@ public class ConfigurationDAO {
 	@Value("${es.region}")
 	private String region;
 
+	// Recommended maximum page size
+	@Value("${page_size}")
+	private int pageSize;
+
 	//Testing
 	@Value("${test.queries_file}")
 	private String testQueriesFile;
