@@ -84,7 +84,7 @@ public class ConfigurationDAO {
 	private String region;
 
 	// Recommended maximum page size
-	@Value("${page_size:10000}")
+	@Value("${page_size:5000}")
 	private int pageSize;
 
 	//Testing
