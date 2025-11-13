@@ -8,6 +8,8 @@ import org.opensearch.index.query.*;
 import org.opensearch.search.builder.SearchSourceBuilder;
 import org.opensearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.opensearch.search.sort.SortOrder;
+import org.opensearch.search.sort.FieldSortBuilder;
+import org.opensearch.search.sort.SortBuilders;
 
 import java.util.*;
 
@@ -35,14 +37,98 @@ public class GlobalQueryFilter {
                                 createGlobalQuerySets(param, query),
                                 createGlobalConditionalQueries(param, query))
                 );
-        // Set Sort
+        // Set Sort with Secondary Sort Support
         String defaultSortField = query.getFilter().getDefaultSortField();
-        if (defaultSortField !=null){
-            String sortDirection = query.getFilter().getSortDirection();
-            SortOrder order = "ASC".equalsIgnoreCase(sortDirection) ? SortOrder.ASC : SortOrder.DESC;
-            builder.sort(defaultSortField, order);
+        String secondSortField = query.getFilter().getSecondSortField();
+        String sortDirection = query.getFilter().getSortDirection();
+        SortOrder order = "ASC".equalsIgnoreCase(sortDirection) ? SortOrder.ASC : SortOrder.DESC;
+        
+    // Log sorting configuration for verification
+    // System.out.println("========== SORT FIELD VERIFICATION ==========");
+    // System.out.println("Default Sort Field: " + defaultSortField);
+    // System.out.println("Secondary Sort Field: " + secondSortField);
+    // System.out.println("Sort Direction: " + sortDirection);
+    // System.out.println("Sort Order: " + order);
+        
+        // Apply SECONDARY sort FIRST (this becomes the primary grouping)
+        boolean appliedSort = false;
+            if (secondSortField != null && !secondSortField.isEmpty()) {
+                try {
+                    String secondSortFieldWithKeyword = ensureKeywordSuffix(secondSortField);
+                    // System.out.println("Applying SECONDARY sort FIRST: " + secondSortFieldWithKeyword + " (" + order + ")");
+                    FieldSortBuilder secondarySort = SortBuilders.fieldSort(secondSortFieldWithKeyword)
+                            .unmappedType("keyword") // tolerate indices missing this field
+                            .missing("_last")
+                            .order(order);
+                    builder.sort(secondarySort);
+                    appliedSort = true;
+                    // System.out.println("✓ Secondary sort applied successfully (with unmapped tolerance)");
+                } catch (Exception e) {
+                    System.err.println("ERROR applying secondary sort field '" + secondSortField + "': " + e.getMessage());
+                    e.printStackTrace();
+                }
+            } else {
+                // System.out.println("No secondary sort field configured");
         }
-        setGlobalHighlightQuery(query, builder);
+        
+        // Apply PRIMARY sort SECOND (this sorts within secondary groups)
+            if (defaultSortField != null && !defaultSortField.isEmpty()) {
+                try {
+                    String defaultSortFieldWithKeyword = ensureKeywordSuffix(defaultSortField);
+                    // System.out.println("Applying PRIMARY sort: " + defaultSortFieldWithKeyword + " (" + order + ")");
+                    FieldSortBuilder primarySort = SortBuilders.fieldSort(defaultSortFieldWithKeyword)
+                            .unmappedType("keyword")
+                            .missing("_last")
+                            .order(order);
+                    builder.sort(primarySort);
+                    appliedSort = true;
+                    // System.out.println("✓ Primary sort applied successfully (with unmapped tolerance)");
+                } catch (Exception e) {
+                    System.err.println("ERROR applying default sort field '" + defaultSortField + "': " + e.getMessage());
+                    e.printStackTrace();
+                }
+            } else {
+                // System.out.println("No default sort field configured");
+        }
+        
+        // Fallback: if no sort fields provided, use _score DESC for deterministic ordering
+        if (!appliedSort) {
+            // System.out.println("WARNING: No sort fields supplied; applying fallback _score DESC");
+            try {
+                builder.sort("_score", SortOrder.DESC);
+                // System.out.println("✓ Fallback sort applied successfully");
+            } catch (Exception e) {
+                System.err.println("ERROR applying fallback sort: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+        
+    // System.out.println("Final Sort Order: " + builder.sorts());
+    // System.out.println("============================================");
+        
+        try {
+            setGlobalHighlightQuery(query, builder);
+        } catch (Exception e) {
+            System.err.println("ERROR setting highlight query: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        // Log final builder state before returning
+        try {
+            // System.out.println("========== FINAL BUILDER STATE ==========");
+            // System.out.println("Query: " + builder.query());
+            // System.out.println("Size: " + builder.size());
+            // System.out.println("From: " + builder.from());
+            // System.out.println("Sorts: " + builder.sorts());
+            // if (builder.highlighter() != null) {
+            //     System.out.println("Highlighter: configured");
+            // }
+            // System.out.println("Full Builder DSL:\n" + builder.toString());
+            // System.out.println("==========================================");
+        } catch (Exception e) {
+            System.err.println("ERROR logging final builder state: " + e.getMessage());
+        }
+        
         return builder;
     }
 
@@ -122,5 +208,27 @@ public class GlobalQueryFilter {
             if (highlightBuilder.fragmentSize(yamlHighlight.getFragmentSize()) != null) highlightBuilder.fragmentSize(yamlHighlight.getFragmentSize());
             builder.highlighter(highlightBuilder);
         }
+    }
+
+    /**
+     * Ensures the field has .keyword suffix for proper sorting on text fields.
+     * Only adds .keyword if the field doesn't already have it and isn't a numeric/date field.
+     * 
+     * @param field The field name to process
+     * @return The field name with .keyword suffix if appropriate
+     */
+    private String ensureKeywordSuffix(String field) {
+        if (field == null || field.isEmpty()) {
+            return field;
+        }
+        
+        // Don't add .keyword if it already has it
+        if (field.endsWith(".keyword")) {
+            return field;
+        }
+        
+
+        // For all other fields (likely text fields), add .keyword
+        return field + ".keyword";
     }
 }

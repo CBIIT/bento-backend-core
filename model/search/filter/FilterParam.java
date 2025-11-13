@@ -23,10 +23,11 @@ public class FilterParam {
     private final Set<String> nestedParameters;
     private final String searchText;
     private final Map<String, List<String>> extraFilters;
+    private final String secondSortField;
 
     @Builder
     public FilterParam(Map<String, Object> args, String selectedField, Set<String> ignoreIfEmpty,
-                       boolean caseInsensitive, String defaultSortField, Map<String, String> alternativeSortField,
+                       boolean caseInsensitive, String defaultSortField, String secondSortField,  Map<String, String> alternativeSortField,
                        boolean isIgnoreSelectedField,String subAggSelectedField,
                        boolean isRangeFilter, Set<String> returnFields,
                        Set<String> rangeFilterFields, Set<String> nestedParameters, String nestedPath,
@@ -39,6 +40,7 @@ public class FilterParam {
         this.rangeFilterFields = rangeFilterFields == null ? new HashSet<>() : rangeFilterFields;
         this.nestedParameters = nestedParameters != null ? nestedParameters : new HashSet<>();
         this.nestedPath = nestedPath;
+        this.secondSortField = secondSortField;
         this.isIgnoreSelectedField = isIgnoreSelectedField;
         this.isRangeFilter = isRangeFilter;
         this.pagination = new Pagination.PaginationBuilder()
