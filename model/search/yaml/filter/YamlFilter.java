@@ -11,6 +11,7 @@ import java.util.Set;
 public class YamlFilter {
     private String type;
     private String defaultSortField;
+    private String secondSortField;
     private String selectedField;
     private String subAggSelectedField;
     private String nestedPath;
