@@ -39,6 +39,10 @@ public class TypeChecker {
                 TypeToken<?> itemType = expectedType.resolveType(List.class.getTypeParameters()[0]);
 
                 for (Object item : list) {
+                    if (item == null) {
+                        continue;
+                    }
+
                     if (!matches(item, itemType.getType())) {
                         return false;
                     }
@@ -51,6 +55,16 @@ public class TypeChecker {
                 TypeToken<?> valueType = expectedType.resolveType(Map.class.getTypeParameters()[1]);
 
                 for (Map.Entry<?, ?> entry : map.entrySet()) {
+                    // Not sure how the key could be null, but check just in case
+                    if (entry.getKey() == null) {
+                        continue;
+                    }
+
+                    // Check if value is null
+                    if (entry.getValue() == null) {
+                        continue;
+                    }
+
                     if (!matches(entry.getKey(), keyType.getType()) || !matches(entry.getValue(), valueType.getType())) {
                         return false;
                     }
