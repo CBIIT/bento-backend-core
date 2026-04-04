@@ -25,7 +25,6 @@ public class MvcWebConfig implements WebMvcConfigurer {
 		resolver.setPrefix("/WEB-INF/");
 		resolver.setSuffix(".jsp");
 		registry.viewResolver(resolver);
-		registry.jsp();
 	}
 
 	@Override
