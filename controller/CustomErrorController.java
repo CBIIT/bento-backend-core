@@ -16,14 +16,18 @@ public class CustomErrorController implements ErrorController {
     public ModelAndView handleError(HttpServletRequest request) {
         Object status = request.getAttribute(RequestDispatcher.ERROR_STATUS_CODE);
 
-        if (status != null) {
-            int statusCode = Integer.parseInt(status.toString());
+        try {
+            int statusCode = status instanceof Integer 
+                ? (Integer) status 
+                : Integer.parseInt(status.toString());
 
             if (statusCode == HttpStatus.NOT_FOUND.value()) {
                 return new ModelAndView("errors/errorPage404");
             } else if (statusCode == HttpStatus.INTERNAL_SERVER_ERROR.value()) {
                 return new ModelAndView("errors/errorPage500");
             }
+        } catch (NumberFormatException ex) {
+            // fall through to general error page
         }
         return new ModelAndView("errors/generalErrorPage");
     }
