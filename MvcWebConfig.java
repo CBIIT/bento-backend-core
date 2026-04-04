@@ -11,10 +11,8 @@ import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry
 import org.springframework.web.servlet.config.annotation.ViewResolverRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
-import org.springframework.web.servlet.view.JstlView;
 
 import java.util.concurrent.TimeUnit;
-
 
 @Configuration
 @EnableWebMvc
@@ -26,9 +24,7 @@ public class MvcWebConfig implements WebMvcConfigurer {
 		InternalResourceViewResolver resolver = new InternalResourceViewResolver();
 		resolver.setPrefix("/WEB-INF/");
 		resolver.setSuffix(".jsp");
-		resolver.setViewClass(JstlView.class);
 		registry.viewResolver(resolver);
-		registry.jsp();
 	}
 
 	@Override

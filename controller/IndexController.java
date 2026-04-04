@@ -1,6 +1,5 @@
 package gov.nih.nci.bento.controller;
 
-
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.LogManager;
@@ -12,17 +11,16 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
-
 @Controller
 public class IndexController {
 
 	private static final Logger logger = LogManager.getLogger(IndexController.class);
-	
+
 	@RequestMapping(value = "/", produces = "text/html")
-    public ModelAndView errorHtml(HttpServletRequest request) {
-		
-        return new ModelAndView("/index");
-    }
+	public ModelAndView errorHtml(HttpServletRequest request) {
+
+		return new ModelAndView("/index");
+	}
 
 	@CrossOrigin
 	@RequestMapping(value = "/ping", method = RequestMethod.GET)
