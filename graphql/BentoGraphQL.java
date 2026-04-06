@@ -10,6 +10,7 @@ import gov.nih.nci.bento.model.PrivateNeo4jDataFetcher;
 import gov.nih.nci.bento.service.RedisService;
 import graphql.GraphQL;
 import graphql.schema.GraphQLNamedType;
+import graphql.schema.visibility.NoIntrospectionGraphqlFieldVisibility;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.SchemaGenerator;
@@ -34,6 +35,7 @@ public class BentoGraphQL {
 
     private static final Logger logger = LogManager.getLogger(BentoGraphQL.class);
 
+    private final ConfigurationDAO config;
     private final GraphQL privateGraphQL;
     // private final GraphQL publicGraphQL;
 
@@ -43,6 +45,7 @@ public class BentoGraphQL {
             AbstractPrivateESDataFetcher privateESDataFetcher
             // AbstractPublicESDataFetcher publicESDataFetcher
     ) throws IOException {
+        this.config = config;
         // PublicNeo4jDataFetcher publicNeo4JDataFetcher = new PublicNeo4jDataFetcher(config, redisService);
         PrivateNeo4jDataFetcher privateNeo4jDataFetcher = new PrivateNeo4jDataFetcher(config, redisService);
 
@@ -68,7 +71,7 @@ public class BentoGraphQL {
 
     private GraphQL buildGraphQL(String neo4jSchemaFile, AbstractNeo4jDataFetcher neo4jDataFetcher) throws IOException {
         GraphQLSchema neo4jSchema = getNeo4jSchema(neo4jSchemaFile, neo4jDataFetcher);
-        return GraphQL.newGraphQL(neo4jSchema).build();
+        return GraphQL.newGraphQL(applyIntrospectionVisibility(neo4jSchema)).build();
     }
 
     private GraphQL buildGraphQLWithES(String neo4jSchemaFile, String esSchemaFile,
@@ -76,7 +79,18 @@ public class BentoGraphQL {
         GraphQLSchema neo4jSchema = getNeo4jSchema(neo4jSchemaFile, privateNeo4JDataFetcher);
         GraphQLSchema esSchema = getEsSchema(esSchemaFile, esBentoDataFetcher);
         GraphQLSchema mergedSchema = mergeSchema(neo4jSchema, esSchema);
-        return GraphQL.newGraphQL(mergedSchema).build();
+        return GraphQL.newGraphQL(applyIntrospectionVisibility(mergedSchema)).build();
+    }
+
+    private GraphQLSchema applyIntrospectionVisibility(GraphQLSchema schema) {
+        if (config.isGraphqlIntrospectionEnabled()) {
+            return schema;
+        }
+        return schema.transform(builder -> builder.codeRegistry(
+            schema.getCodeRegistry().transform(cr ->
+                cr.fieldVisibility(NoIntrospectionGraphqlFieldVisibility.NO_INTROSPECTION_FIELD_VISIBILITY)
+            )
+        ));
     }
 
     private GraphQLSchema getNeo4jSchema(String schema, AbstractNeo4jDataFetcher dataFetcher) throws IOException {
