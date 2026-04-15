@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class TomcatConfig {
 
-    @Value("${server.cookie.same-site:Lax}")
+    @Value("${bento.cookie.same-site:Lax}")
     private String sameSite;
 
     @Bean
