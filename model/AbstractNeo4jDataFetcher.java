@@ -57,6 +57,10 @@ public abstract class AbstractNeo4jDataFetcher implements AutoCloseable, DataFet
         driver = GraphDatabase.driver(uri, AuthTokens.basic(user, password));
     }
 
+    public Driver getDriver() {
+        return driver;
+    }
+
     @Override
     public void close() throws Exception {
         driver.close();

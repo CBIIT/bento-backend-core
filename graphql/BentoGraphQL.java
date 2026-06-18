@@ -9,7 +9,9 @@ import gov.nih.nci.bento.model.PrivateNeo4jDataFetcher;
 // import gov.nih.nci.bento.model.PublicNeo4jDataFetcher;
 import gov.nih.nci.bento.service.RedisService;
 import graphql.GraphQL;
+import graphql.schema.FieldCoordinates;
 import graphql.schema.GraphQLNamedType;
+import graphql.schema.PropertyDataFetcher;
 import graphql.schema.visibility.NoIntrospectionGraphqlFieldVisibility;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
@@ -99,7 +101,37 @@ public class BentoGraphQL {
         File schemaFile = resource.getFile();
         String schemaString = Files.readString(schemaFile.toPath());
         SchemaConfig schemaConfig = new SchemaConfig();
-        GraphQLSchema neo4jSchema = SchemaBuilder.buildSchema(schemaString, schemaConfig, dataFetcher);
+
+        // Workaround: neo4j-graphql-java uses the GraphQL type name as the Cypher node
+        // variable. 'type case' produces the variable 'case', which is a Cypher reserved
+        // keyword. We replace the broken auto-generated resolver with a hand-written one
+        // and install PropertyDataFetchers for all @relation sub-fields so they read from
+        // the pre-fetched Map returned by CaseDataFetcher instead of generating new Cypher.
+        CaseDataFetcher caseDataFetcher = new CaseDataFetcher(dataFetcher.getDriver());
+        GraphQLSchema builtSchema = SchemaBuilder.buildSchema(schemaString, schemaConfig, dataFetcher);
+        GraphQLSchema neo4jSchema = builtSchema.transform(builder ->
+            builder.codeRegistry(builtSchema.getCodeRegistry().transform(crBuilder -> {
+                crBuilder.dataFetcher(FieldCoordinates.coordinates("QueryType", "case"), caseDataFetcher);
+                crBuilder.dataFetcher(FieldCoordinates.coordinates("case", "cohort"),            PropertyDataFetcher.fetching("cohort"));
+                crBuilder.dataFetcher(FieldCoordinates.coordinates("case", "study"),             PropertyDataFetcher.fetching("study"));
+                crBuilder.dataFetcher(FieldCoordinates.coordinates("case", "enrollment"),        PropertyDataFetcher.fetching("enrollment"));
+                crBuilder.dataFetcher(FieldCoordinates.coordinates("case", "demographic"),       PropertyDataFetcher.fetching("demographic"));
+                crBuilder.dataFetcher(FieldCoordinates.coordinates("case", "diagnoses"),         PropertyDataFetcher.fetching("diagnoses"));
+                crBuilder.dataFetcher(FieldCoordinates.coordinates("case", "cycles"),            PropertyDataFetcher.fetching("cycles"));
+                crBuilder.dataFetcher(FieldCoordinates.coordinates("case", "follow_ups"),        PropertyDataFetcher.fetching("follow_ups"));
+                crBuilder.dataFetcher(FieldCoordinates.coordinates("case", "samples"),           PropertyDataFetcher.fetching("samples"));
+                crBuilder.dataFetcher(FieldCoordinates.coordinates("case", "files"),             PropertyDataFetcher.fetching("files"));
+                crBuilder.dataFetcher(FieldCoordinates.coordinates("case", "visits"),            PropertyDataFetcher.fetching("visits"));
+                crBuilder.dataFetcher(FieldCoordinates.coordinates("case", "adverse_events"),    PropertyDataFetcher.fetching("adverse_events"));
+                crBuilder.dataFetcher(FieldCoordinates.coordinates("case", "registrations"),     PropertyDataFetcher.fetching("registrations"));
+                crBuilder.dataFetcher(FieldCoordinates.coordinates("case", "study_arm"),         PropertyDataFetcher.fetching("study_arm"));
+                crBuilder.dataFetcher(FieldCoordinates.coordinates("case", "adverse_event"),     PropertyDataFetcher.fetching("adverse_event"));
+                crBuilder.dataFetcher(FieldCoordinates.coordinates("case", "off_study"),         PropertyDataFetcher.fetching("off_study"));
+                crBuilder.dataFetcher(FieldCoordinates.coordinates("case", "off_treatment"),     PropertyDataFetcher.fetching("off_treatment"));
+                crBuilder.dataFetcher(FieldCoordinates.coordinates("case", "canine_individual"),  PropertyDataFetcher.fetching("canine_individual"));
+            }))
+        );
+
         return neo4jSchema;
     }
 
