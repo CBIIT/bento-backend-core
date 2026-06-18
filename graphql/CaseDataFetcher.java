@@ -73,7 +73,7 @@ public class CaseDataFetcher implements DataFetcher<Object> {
               off_study: os { .* },
               off_treatment: ot { .* },
               canine_individual: ci { .* }
-            }
+            } AS c
             """;
 
     private final Driver driver;
