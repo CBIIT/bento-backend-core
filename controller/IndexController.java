@@ -30,4 +30,12 @@ public class IndexController {
 	public String ping(HttpServletRequest request, HttpServletResponse response) {
 		return "pong";
 	}
+
+	@CrossOrigin
+	@RequestMapping(value = "/health", method = RequestMethod.GET)
+	@ResponseBody
+	public String health(HttpServletRequest request, HttpServletResponse response) {
+		response.setStatus(HttpServletResponse.SC_OK);
+		return "{\"status\":\"UP\"}";
+	}
 }
