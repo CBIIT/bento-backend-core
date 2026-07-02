@@ -35,7 +35,9 @@ public class IndexController {
 	@RequestMapping(value = "/health", method = RequestMethod.GET)
 	@ResponseBody
 	public String health(HttpServletRequest request, HttpServletResponse response) {
+
 		response.setStatus(HttpServletResponse.SC_OK);
 		return "{\"status\":\"UP\"}";
+
 	}
 }
