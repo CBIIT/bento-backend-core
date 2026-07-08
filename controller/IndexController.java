@@ -32,12 +32,12 @@ public class IndexController {
 	}
 
 	@CrossOrigin
-	@RequestMapping(value = "/health", method = RequestMethod.GET)
+	@RequestMapping(value = "/health", method = RequestMethod.GET,
+			produces = org.springframework.http.MediaType.APPLICATION_JSON_VALUE + "; charset=utf-8")
 	@ResponseBody
-	public String health(HttpServletRequest request, HttpServletResponse response) {
-
-		response.setStatus(HttpServletResponse.SC_OK);
-		return "{\"status\":\"UP\"}";
-
+	public org.springframework.http.ResponseEntity<String> health() {
+		return org.springframework.http.ResponseEntity.ok()
+				.contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+				.body("{\"status\":\"UP\"}");
 	}
 }
