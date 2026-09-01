@@ -41,7 +41,7 @@ public class ConfigurationDAO {
 	private String schemaFile;
 	@Value("${graphql.es_schema}")
 	private String esSchemaFile;
-	@Value("${graphql.introspection.enabled}")
+	@Value("${graphql.introspection.enabled:false}")
 	private boolean graphqlIntrospectionEnabled;
 
 	//Public Graphql Schemas
