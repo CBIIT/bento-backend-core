@@ -18,6 +18,8 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.SchemaGenerator;
 import graphql.schema.idl.SchemaParser;
 import graphql.schema.idl.TypeDefinitionRegistry;
+import graphql.schema.visibility.DefaultGraphqlFieldVisibility;
+import graphql.schema.visibility.NoIntrospectionGraphqlFieldVisibility;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.neo4j.graphql.SchemaBuilder;
@@ -55,11 +57,11 @@ public class BentoGraphQL {
             // this.publicGraphQL = buildGraphQLWithES(config.getPublicSchemaFile(),
             //         config.getPublicEsSchemaFile(), publicNeo4JDataFetcher, publicESDataFetcher);
             this.privateGraphQL = buildGraphQLWithES(config.getSchemaFile(), config.getEsSchemaFile(),
-                    privateNeo4jDataFetcher, privateESDataFetcher);
+                    privateNeo4jDataFetcher, privateESDataFetcher, config);
         }
         else{
             // this.publicGraphQL = buildGraphQL(config.getPublicSchemaFile(), publicNeo4JDataFetcher);
-            this.privateGraphQL = buildGraphQL(config.getSchemaFile(), privateNeo4jDataFetcher);
+            this.privateGraphQL = buildGraphQL(config.getSchemaFile(), privateNeo4jDataFetcher, config);
         }
     }
 
@@ -71,17 +73,20 @@ public class BentoGraphQL {
         return privateGraphQL;
     }
 
-    private GraphQL buildGraphQL(String neo4jSchemaFile, AbstractNeo4jDataFetcher neo4jDataFetcher) throws IOException {
+    private GraphQL buildGraphQL(String neo4jSchemaFile, AbstractNeo4jDataFetcher neo4jDataFetcher, 
+        ConfigurationDAO config) throws IOException {
         GraphQLSchema neo4jSchema = getNeo4jSchema(neo4jSchemaFile, neo4jDataFetcher);
-        return GraphQL.newGraphQL(applyIntrospectionVisibility(neo4jSchema)).build();
+        neo4jSchema = configureSecurity(neo4jSchema, config);
+        return GraphQL.newGraphQL(neo4jSchema).build();
     }
 
     private GraphQL buildGraphQLWithES(String neo4jSchemaFile, String esSchemaFile,
-            AbstractNeo4jDataFetcher privateNeo4JDataFetcher, AbstractESDataFetcher esBentoDataFetcher) throws IOException {
+            AbstractNeo4jDataFetcher privateNeo4JDataFetcher, AbstractESDataFetcher esBentoDataFetcher,  ConfigurationDAO config) throws IOException {
         GraphQLSchema neo4jSchema = getNeo4jSchema(neo4jSchemaFile, privateNeo4JDataFetcher);
         GraphQLSchema esSchema = getEsSchema(esSchemaFile, esBentoDataFetcher);
         GraphQLSchema mergedSchema = mergeSchema(neo4jSchema, esSchema);
-        return GraphQL.newGraphQL(applyIntrospectionVisibility(mergedSchema)).build();
+        mergedSchema = configureSecurity(mergedSchema, config);
+        return GraphQL.newGraphQL(mergedSchema).build();
     }
 
     private GraphQLSchema applyIntrospectionVisibility(GraphQLSchema schema) {
@@ -139,6 +144,24 @@ public class BentoGraphQL {
         File schemaFile = new DefaultResourceLoader().getResource("classpath:" + esSchema).getFile();
         TypeDefinitionRegistry schemaParser = new SchemaParser().parse(schemaFile);
         return new SchemaGenerator().makeExecutableSchema(schemaParser, bentoDataFetcher.buildRuntimeWiring());
+    }
+
+    private GraphQLSchema configureSecurity(
+        GraphQLSchema schema,
+        ConfigurationDAO config) {
+        // Introspection security
+        GraphQLCodeRegistry codeRegistry =
+                schema.getCodeRegistry().transform(builder ->
+                        builder.fieldVisibility(
+                                config.isGraphqlIntrospectionEnabled()
+                                        ? DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY
+                                        : NoIntrospectionGraphqlFieldVisibility.NO_INTROSPECTION_FIELD_VISIBILITY
+                        )
+                );
+
+        return GraphQLSchema.newSchema(schema)
+                .codeRegistry(codeRegistry)
+                .build();
     }
 
     private GraphQLSchema mergeSchema(GraphQLSchema schema1, GraphQLSchema schema2) {
