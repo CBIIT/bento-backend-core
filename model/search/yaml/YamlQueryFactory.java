@@ -154,6 +154,7 @@ public class YamlQueryFactory {
                     return new GlobalQueryFilter(FilterParam.builder()
                             .args(param.getArgs())
                             .isIgnoreSelectedField(filterType.isIgnoreSelectedField())
+                            .secondSortField(filterType.getSecondSortField())
                             .selectedField(filterType.getSelectedField())
                             .nestedPath(filterType.getNestedPath())
                             .extraFilters(filterType.getExtraFilters())
