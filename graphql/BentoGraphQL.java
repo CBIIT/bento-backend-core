@@ -10,6 +10,7 @@ import gov.nih.nci.bento.model.PrivateNeo4jDataFetcher;
 import gov.nih.nci.bento.service.RedisService;
 import graphql.GraphQL;
 import graphql.schema.FieldCoordinates;
+import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLNamedType;
 import graphql.schema.PropertyDataFetcher;
 import graphql.schema.visibility.NoIntrospectionGraphqlFieldVisibility;
